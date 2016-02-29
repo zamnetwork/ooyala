@@ -1,0 +1,37 @@
+{
+  "name": "ooyala",
+  "author": "Beau Sorensen <mail@beausorensen.com> (http://github.com/sorensen)",
+  "version": "0.0.0",
+  "description": "Ooyala API",
+  "keywords": ["ooyala", "api", "sdk"],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/majorleaguesoccer/ooyala.git"
+  },
+  "engines": {
+    "node": ">=4.0"
+  },
+  "licence": "MIT",
+  "main": "index.js",
+  "scripts": {
+    "mocha": "./node_modules/mocha/bin/mocha -R spec test/test-integration.js",
+    "hint": "./node_modules/jshint/bin/jshint ./",
+    "test": "npm run hint && npm run mocha"
+  },
+  "dependencies": {
+    "bluebird": "^3.3.1",
+    "debug": "^2.2.0",
+    "latinize": "^0.2.0",
+    "qs": "^5.0.0",
+    "request": "^2.61.0",
+    "try-json": "^1.0.0",
+    "underscore": "^1.8.3",
+    "var-type": "^1.0.0"
+  },
+  "devDependencies": {
+    "jshint": "^2.8.0",
+    "mocha": "^2.1.0",
+    "mock-require": "^1.2.1",
+    "yargs": "^4.1.0"
+  }
+}
