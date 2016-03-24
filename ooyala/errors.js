@@ -190,20 +190,5 @@ exports.getError = function(resp, req) {
     err = new exports.BadRequestError(resp, req)
   }
 
-  // TODO: Really need to track down where each one of these can come from, 
-  // and put the logic within those method calls. This is pretty vague...
-  require('beau').log('ERROR FOUND: ', {
-    code: code
-  , decoded: decoded
-  , url: req.url
-  , err: err ? err.message : null
-  })
-  try {
-    require('beau').log('REQUEST: ', resp.toJSON(), req.toJSON())
-  } catch(e) {}
-  if (!err) {
-    console.log('WTF: ', resp ? resp.body : resp)
-  }
-
   return err || new exports.RequestError(resp, req)
 }
