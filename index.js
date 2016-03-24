@@ -1,3 +1,3 @@
 'use strict';
 
-module.exports = require('./lib/ooyala')
+module.exports = require('./ooyala')

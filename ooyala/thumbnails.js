@@ -16,7 +16,8 @@ var debug = require('debug')('ooyala:thumbnails')
  */
 
 exports.getVideoThumbnails = function(id) {
-  this.validate(id, 'String', 'id')
+  var rej = this.validate(id, 'String', 'id')
+  if (rej) return rej
 
   debug('[getVideoThumbnails] id=`%s`', id)
 
@@ -39,7 +40,8 @@ exports.getVideoThumbnails = function(id) {
  */
 
 exports.setVideoToUploadedThumbnail = function(id) {
-  this.validate(id, 'String', 'id')
+  var rej = this.validate(id, 'String', 'id')
+  if (rej) return rej
   
   debug('[setVideoToUploadedThumbnail] id=`%s`', id)
 
@@ -68,7 +70,8 @@ exports.setVideoToUploadedThumbnail = function(id) {
  */
 
 exports.setVideoToGeneratedThumbnail = function(id, time) {
-  this.validate(id, 'String', 'id')
+  var rej = this.validate(id, 'String', 'id')
+  if (rej) return rej
 
   debug('[setVideoToGeneratedThumbnail] id=`%s` time=`%s`', id, time)
 
@@ -100,7 +103,8 @@ exports.setVideoToGeneratedThumbnail = function(id, time) {
  */
 
 exports.uploadVideoThumbnail = function(id, file) {
-  this.validate(id, 'String', 'id')
+  var rej = this.validate(id, 'String', 'id')
+  if (rej) return rej
   
   debug('[uploadVideoThumbnail] id=`%s`', id)
 

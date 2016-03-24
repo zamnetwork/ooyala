@@ -17,7 +17,8 @@ var Promise = require('bluebird')
  */
 
 exports.getVideoUploadUrl = function(id) {
-  this.validate(id, 'String', 'id')
+  var rej = this.validate(id, 'String', 'id')
+  if (rej) return rej
 
   return this
     .get({
@@ -30,8 +31,6 @@ exports.getVideoUploadUrl = function(id) {
 }
 
 /**
- * TODO: Figure out how to implement this with a full video file
- * 
  * Step 3ab. Upload the raw video asset to ooyala
  *
  * @param {String} asset id
@@ -41,9 +40,12 @@ exports.getVideoUploadUrl = function(id) {
  */
 
 exports._uploadVideoAsset = function(id, urls, buffer, statusCheck) {
-  this.validate(id, 'String', 'id')
-  this.validate(urls, 'Array', 'urls')
-  this.validate(statusCheck, 'Function', 'statusCheck')
+  var rej = (
+    this.validate(id, 'String', 'id')
+    || this.validate(urls, 'Array', 'urls')
+    || this.validate(statusCheck, 'Function', 'statusCheck')
+  )
+  if (rej) return rej
   
   debug('[uploadVideoAsset] starting initial upload: id=`%s` urls=`%s`', id, urls.join(','))
 
@@ -64,6 +66,7 @@ exports._uploadVideoAsset = function(id, urls, buffer, statusCheck) {
     })
   })
 
+  // TODO: This could likely be refactored to be simpler
   function upload(list) {
     return new Promise(function(resolve, reject) {
       return Promise
@@ -183,7 +186,8 @@ exports.uploadVideoChunk = function(url, chunk) {
  */
 
 exports.setVideoUploadStatus = function(id, url) {
-  this.validate(id, 'String', 'id')
+  var rej = this.validate(id, 'String', 'id')
+  if (rej) return rej
   
   debug('[setVideoUploadStatus] id=`%s`', id, url)
 
@@ -192,7 +196,7 @@ exports.setVideoUploadStatus = function(id, url) {
       route: url || `/v2/assets/${id}/upload_status`
     , options: {
         body: {
-          // This is only ever marked as uploaded
+          // This is only ever marked as uploaded, not sure why
           status: 'uploaded'
         }
       }
@@ -221,32 +225,31 @@ exports.setVideoReplaceUploadStatus = function(id) {
 /**
  * Pipline for replacing the asset of an existing video
  *
+ *   1. send initial data to /v2/assets/id/replacement
+ *   2. get upload endpoint with /v2/assets/id/replacement/uploading_urls
+ *   3. upload file content to upload endpoint
+ *   4. send upload status to /v2/assets/id/replacement/upload_status
+ *
  * SEE: http://support.ooyala.com/developers/documentation/tasks/api_asset_replacement.html
  *
  * @param {String} asset id
- * @param {Object} asset data
  * @param {Buffer} raw asset file
  * @return {Promise} promise
  */
 
-exports.replaceFullVideoAsset = function(id, video, file)  {
-  this.validate(id, 'String', 'id')
-  this.validate(video, 'Object', 'video')
+exports.replaceFullVideoAsset = function(id, file)  {
+  var rej = (
+    this.validate(id, 'String', 'id')
+    || this.validate(file, 'Uint8Array', 'file')
+  )
+  if (rej) return rej
   
   var self = this
 
-  // Ensure required param `file_size` present
-  if (!video.file_size) video.file_size = file.length
-
-  debug('[replaceFullVideoAsset] replacing id=`%s`', id)
-
-  // 1. send initial data to /v2/assets/id/replacement
-  // 2. get upload endpoint with /v2/assets/id/replacement/uploading_urls
-  // 3. upload file content to upload endpoint
-  // 4. send upload status to /v2/assets/id/replacement/upload_status
+  debug('[replaceFullVideoAsset] replacing: id=`%s`', id)
 
   return this
-    .replaceVideoAsset(id, video)
+    .replaceVideoAsset(id, file.length)
     .then(function() {
       return self.getVideoReplaceUploadUrl(id)
     })
@@ -269,9 +272,12 @@ exports.replaceFullVideoAsset = function(id, video, file)  {
  * @return {Promise} promise
  */
 
-exports.replaceVideoAsset = function(id, video) {
-  this.validate(id, 'String', 'id')
-  this.validate(video, 'Object', 'video')
+exports.replaceVideoAsset = function(id, fileSize) {
+  var rej = (
+    this.validate(id, 'String', 'id')
+    || this.validate(fileSize, 'Number', 'fileSize')
+  )
+  if (rej) return rej
 
   debug('[replaceVideoAsset] id=`%s`', id)
 
@@ -280,10 +286,12 @@ exports.replaceVideoAsset = function(id, video) {
       route: `/v2/assets/${id}/replacement`
     , options: {
         body: {
-          file_size: video.file_size
+          file_size: fileSize
         , chunk_size: this.config.chunkSize
 
         // TODO: If the filename is the same, omit it, if changed, include it
+        // really not sure how to do this
+        //
         // , file_name: video.file_name
         }
       }
@@ -303,7 +311,8 @@ exports.replaceVideoAsset = function(id, video) {
  */
 
 exports.getVideoReplaceUploadUrl = function(id) {
-  this.validate(id, 'String', 'id')
+  var rej = this.validate(id, 'String', 'id')
+  if (rej) return rej
 
   debug('[getVideoReplaceUploadUrl] id=`%s`', id)
 
@@ -322,6 +331,10 @@ exports.getVideoReplaceUploadUrl = function(id) {
  * Upload process (A)
  * Pipeline for the 4 step process of creating a new video asset
  *
+ *   1. get upload endpoint with /v2/assets/id/uploading_urls
+ *   2. upload file content to upload endpoint
+ *   3. send upload status to /v2/assets/id/upload_status
+ *
  * TODO: allow `file` to be a Stream or Buffer
  * SEE: http://support.ooyala.com/developers/documentation/tasks/api_asset_upload.html
  *
@@ -330,82 +343,29 @@ exports.getVideoReplaceUploadUrl = function(id) {
  * @return {Promise} promise
  */
 
-exports.createFullVideoAsset = function(video, file) {
-  this.validate(video, 'Object', 'video')
-  this.validate(file, 'Uint8Array', 'file') // Not sure this works
+exports.uploadFullVideoAsset = function(id, file) {
+  var rej = (
+    this.validate(id, 'String', 'embed_code')
+    || this.validate(file, 'Uint8Array', 'file')
+  )
+  if (rej) return rej
 
   var self = this
-    , id
-    , remoteVideo
 
-  debug('[createFullVideoAsset] data=`%j`', video)
-
-  // TODO: Remove setting value by reference
-  if (!video.file_size) video.file_size = file.length
-
-  // 1. send initial data to /v2/assets
-  // 2. get upload endpoint with /v2/assets/id/uploading_urls
-  // 3. upload file content to upload endpoint
-  // 4. send upload status to /v2/assets/id/upload_status
+  debug('[createFullVideoAsset] id=`%s`', id)
 
   return this
-    // TODO: Consider removing this step and forcing the user to always create 
-    // the video in case any other part of this step goes wrong
-    //
-    // Create video object in backlot
-    .createVideoAsset(video)
-
-    // Set video metadata if available
-    .then(function(obj) {
-      // Hoist ooyala response
-      remoteVideo = obj
-      id = obj.embed_code
-
-      if (!video.metadata) {
-        return obj
-      }
-      return self.setVideoMetadata(obj.embed_code, video.metadata)
-    })
-
-    // Sync up any video labels in backlot before assigning to video
-    .then(function() {
-      if (!video.labels) {
-        return []
-      }
-      return self.syncLabels(video.labels)
-    })
-
-    // Assign labels to video
-    .then(function(ooyalaLabels) {
-      if (!ooyalaLabels || !ooyalaLabels.length) {
-        return
-      }
-      var labelIds = ooyalaLabels.map(function(x) {
-        return x.id
-      })
-      
-      return self.addVideoLabels(id, labelIds) 
-    })
-
-    // Get ooyala upload url(s)
-    .then(function() {
-      return self.getVideoUploadUrl(id)
-    })
+    .getVideoUploadUrl(id)
 
     // Upload file
     .then(function(urls) {
       return self.uploadVideoAsset(id, urls, file)
     })
     
-    // Always return the created video object
+    // All done
     .then(function(results) {
-      debug('[createFullVideoAsset] completed: results=`%j`', results)
-      return remoteVideo
-    })
-
-    // Add video data to error if available
-    .catch(function(err) {
-      err.video = remoteVideo
-      throw err
+      debug('[createFullVideoAsset] completed: id=`%s` results=`%j`', id, results)
+      
+      return results
     })
 }
