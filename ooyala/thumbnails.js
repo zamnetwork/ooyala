@@ -93,6 +93,9 @@ exports.setVideoToGeneratedThumbnail = function(id, time) {
 }
 
 /**
+ * TODO: There is a size limit on what can be sent, no idea what that limit 
+ * actually is. If found, add it here for validation
+ * 
  * Upload thumbnail image as the custom image for the video. 
  * This does not automatically set the video to use this image 
  * though, must call the `setVideoToUploadedThumbnail` method
@@ -103,7 +106,10 @@ exports.setVideoToGeneratedThumbnail = function(id, time) {
  */
 
 exports.uploadVideoThumbnail = function(id, file) {
-  var rej = this.validate(id, 'String', 'id')
+  var rej = (
+    this.validate(id, 'String', 'id')
+    || this.validate(file, 'Uint8Array', 'file')
+  )
   if (rej) return rej
   
   debug('[uploadVideoThumbnail] id=`%s`', id)

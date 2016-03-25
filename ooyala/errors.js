@@ -6,6 +6,7 @@
 
 var tryJSON = require('try-json')
   , varType = require('var-type')
+  , debug = require('debug')('ooyala:errors')
 
 /**
  * Ooyala API Error
@@ -34,15 +35,12 @@ exports.RequestError = class extends exports.Error {
   constructor(resp, req) {
     super()
     this.name = 'OoyalaRequestError'
-    // this.request = req
     
     // Extract details from the response
     if (resp) {
-      this.response = resp.toJSON()
-      // this.body = resp.body
-      // this.statusCode = resp.statusCode
-
       var decoded = exports.decodeMessage(resp)
+
+      this.response = resp.toJSON()
       this.message = decoded.str
       this.messageData = decoded.obj
     }
@@ -132,6 +130,8 @@ exports.getError = function(resp, req) {
     , obj = decoded.obj
     , err
 
+  debug('[getError] calculating: resp=`%j`', resp.toJSON())
+
   // Asset replace call, need to wait for Ooyala to finish processing first
   if (str === "Content cannot be replaced since the asset's status is processing") {
     err = new exports.ProcessingVideoError(resp, req)
@@ -190,5 +190,10 @@ exports.getError = function(resp, req) {
     err = new exports.BadRequestError(resp, req)
   }
 
-  return err || new exports.RequestError(resp, req)
+  // Could not determine specific error type, send generic
+  if (!err) {
+    err = new exports.RequestError(resp, req)
+  }
+
+  return err
 }
