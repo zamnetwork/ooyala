@@ -16,7 +16,8 @@ var Promise = require('bluebird')
  */
 
 exports.syncLabels = function(labels) {
-  this.validate(labels, 'Array', 'labels')
+  var rej = this.validate(labels, 'Array', 'labels')
+  if (rej) return rej
   
   var self = this
     , synced
@@ -79,7 +80,8 @@ exports.getLabels = function() {
  */
 
 exports.getLabelDetails = function(name) {
-  this.validate(name, 'String', name)
+  var rej = this.validate(name, 'String', name)
+  if (rej) return rej
 
   debug('[getLabelDetails] name=`%s`', name)
 
@@ -104,7 +106,8 @@ exports.getLabelDetails = function(name) {
  */
 
 exports.createLabel = function(name) {
-  this.validate(name, 'String', name)
+  var rej = this.validate(name, 'String', name)
+  if (rej) return rej
 
   debug('[createLabel] name=`%s`', name)
 
@@ -126,7 +129,8 @@ exports.createLabel = function(name) {
  */
 
 exports.deleteLabel = function(id) {
-  this.validate(id, 'String', id)
+  var rej = this.validate(id, 'String', id)
+  if (rej) return rej
 
   debug('[deleteLabel] id=`%s`', id)
 
@@ -148,7 +152,8 @@ exports.deleteLabel = function(id) {
  */
 
 exports.getVideoLabels = function(id) {
-  this.validate(id, 'String', 'id')
+  var rej = this.validate(id, 'String', 'id')
+  if (rej) return rej
 
   debug('[getVideoLabels] id=`%s`', id)
 
@@ -171,8 +176,11 @@ exports.getVideoLabels = function(id) {
  */
 
 exports.addVideoLabels = function(id, labels) {
-  this.validate(id, 'String', 'id')
-  this.validate(labels, 'Array', 'labels')
+  var rej = (
+    this.validate(id, 'String', 'id')
+    || this.validate(labels, 'Array', 'labels')
+  )
+  if (rej) return rej
 
   debug('[addVideoLabels] adding: id=`%s` labels=`%s`', id, labels)
 
@@ -198,8 +206,11 @@ exports.addVideoLabels = function(id, labels) {
  */
 
 exports.removeVideoLabels = function(id, labels) {
-  this.validate(id, 'String', 'id')
-  this.validate(labels, 'Array', 'labels')
+  var rej = (
+    this.validate(id, 'String', 'id')
+    || this.validate(labels, 'Array', 'labels')
+  )
+  if (rej) return rej
 
   debug('[removeVideoLabels] adding: id=`%s` labels=`%s`', id, labels)
 

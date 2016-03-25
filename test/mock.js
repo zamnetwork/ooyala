@@ -33,7 +33,7 @@ function request(options, next) {
   ase(typeof options.headers['Content-Type'], 'string', 'missing `Content-Type`')
 
   var parts = url.split('?')
-    , base = parts[0]
+    // , base = parts[0]
     , query = parts[1]
     , route = url.replace('https://api.ooyala.com', '')
 

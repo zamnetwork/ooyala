@@ -16,7 +16,8 @@ var debug = require('debug')('ooyala:thumbnails')
  */
 
 exports.getVideoThumbnails = function(id) {
-  this.validate(id, 'String', 'id')
+  var rej = this.validate(id, 'String', 'id')
+  if (rej) return rej
 
   debug('[getVideoThumbnails] id=`%s`', id)
 
@@ -39,7 +40,8 @@ exports.getVideoThumbnails = function(id) {
  */
 
 exports.setVideoToUploadedThumbnail = function(id) {
-  this.validate(id, 'String', 'id')
+  var rej = this.validate(id, 'String', 'id')
+  if (rej) return rej
   
   debug('[setVideoToUploadedThumbnail] id=`%s`', id)
 
@@ -68,7 +70,8 @@ exports.setVideoToUploadedThumbnail = function(id) {
  */
 
 exports.setVideoToGeneratedThumbnail = function(id, time) {
-  this.validate(id, 'String', 'id')
+  var rej = this.validate(id, 'String', 'id')
+  if (rej) return rej
 
   debug('[setVideoToGeneratedThumbnail] id=`%s` time=`%s`', id, time)
 
@@ -90,6 +93,9 @@ exports.setVideoToGeneratedThumbnail = function(id, time) {
 }
 
 /**
+ * TODO: There is a size limit on what can be sent, no idea what that limit 
+ * actually is. If found, add it here for validation
+ * 
  * Upload thumbnail image as the custom image for the video. 
  * This does not automatically set the video to use this image 
  * though, must call the `setVideoToUploadedThumbnail` method
@@ -100,7 +106,11 @@ exports.setVideoToGeneratedThumbnail = function(id, time) {
  */
 
 exports.uploadVideoThumbnail = function(id, file) {
-  this.validate(id, 'String', 'id')
+  var rej = (
+    this.validate(id, 'String', 'id')
+    || this.validate(file, 'Uint8Array', 'file')
+  )
+  if (rej) return rej
   
   debug('[uploadVideoThumbnail] id=`%s`', id)
 

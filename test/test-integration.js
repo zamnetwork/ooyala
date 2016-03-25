@@ -63,7 +63,7 @@ if (MOCK) require('./mock')
  * Test
  */
 
-describe('mls-ooyala', function() {
+describe('Integration', function() {
   this.timeout(30 * 60 * 1000)
 
   var Ooyala = require('../index')
@@ -137,7 +137,12 @@ describe('mls-ooyala', function() {
         video.file_size = buff.length
 
         api
-          .createFullVideoAsset(video, buff)
+          .createOrUpdateVideoAsset(video)
+          .then(function(result) {
+            var id = (result || {}).embed_code || 'test'
+            
+            return api.uploadFullVideoAsset(id, buff)
+          })
           .then(function(result) {
             if (MOCK) return done()
             // console.log('createFull: ', result)
@@ -247,7 +252,7 @@ describe('mls-ooyala', function() {
         video.file_size = buff.length
 
         api
-          .replaceFullVideoAsset(ASSET_ID, video, buff)
+          .replaceFullVideoAsset(ASSET_ID, buff)
           .then(function(result) {
             if (MOCK) return done()
 

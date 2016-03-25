@@ -24,6 +24,9 @@ var Promise = require('bluebird')
  */
 
 exports.searchVideos = function(params) {
+  var rej = this.validate(params, ['Object', 'Undefined'], 'params')
+  if (rej) return rej
+
   debug('[searchVideos] searching: params=`%j`', params)
 
   return this
@@ -39,11 +42,6 @@ exports.searchVideos = function(params) {
         , 'labels'
         , 'player'
         , 'primary_preview_image'
-
-        // Doesnt look like we can get this info
-        //
-        // , 'source_file_info'
-        // , 'streams'
         ].join(',')
       }, params || {})
     })
@@ -63,7 +61,8 @@ exports.searchVideos = function(params) {
  */
 
 exports.getVideoDetails = function(id) {
-  this.validate(id, 'String', 'id')
+  var rej = this.validate(id, 'String', 'id')
+  if (rej) return rej
 
   debug('[getVideoDetails] id=`%s`', id)
 
@@ -71,13 +70,12 @@ exports.getVideoDetails = function(id) {
     .get({
       route: `/v2/assets/${id}`
     , params: {
+        // Reduce number of API calls and get data upfront
         include: [
           'metadata'
         , 'labels'
         , 'player'
         , 'primary_preview_image'
-        // , 'source_file_info'
-        // , 'streams'
         ].join(',')
       }
     })
@@ -89,6 +87,8 @@ exports.getVideoDetails = function(id) {
 }
 
 /**
+ * TODO: Consider validating all data properties sent
+ *
  * Step 1a. Create a new video object in Ooyala, looks to set the filename
  * and file size only, likely to tell the API what to look for in 
  * the subsequent asset upload. Responds with `embed_code` as the ID
@@ -104,7 +104,8 @@ exports.getVideoDetails = function(id) {
  */
 
 exports.createVideoAsset = function(video) {
-  this.validate(video, 'Object', 'video')
+  var rej = this.validate(video, 'Object', 'video')
+  if (rej) return rej
 
   debug('[createVideoAsset] adding video to ooyala, data=`%j`', video)
 
@@ -142,8 +143,11 @@ exports.createVideoAsset = function(video) {
  */
 
 exports.updateVideoData = function(id, video) {
-  this.validate(id, 'String', 'id')
-  this.validate(video, 'Object', 'video')
+  var rej = (
+    this.validate(id, 'String', 'id')
+    || this.validate(video, 'Object', 'video')
+  )
+  if (rej) return rej
   
   debug('[updateVideoData] id=`%s` data=`%j`', id, video)
 
@@ -173,7 +177,8 @@ exports.updateVideoData = function(id, video) {
  */
 
 exports.getVideoMetadata = function(id) {
-  this.validate(id, 'String', 'id')
+  var rej = this.validate(id, 'String', 'id')
+  if (rej) return rej
 
   debug('[getVideoMetadata] id=`%s`', id)
 
@@ -196,8 +201,11 @@ exports.getVideoMetadata = function(id) {
  */
 
 exports.setVideoMetadata = function(id, meta) {
-  this.validate(id, 'String', 'id')
-  this.validate(meta, 'Object', 'metadata')
+  var rej = (
+    this.validate(id, 'String', 'id')
+    || this.validate(meta, 'Object', 'metadata')
+  )
+  if (rej) return rej
 
   debug('[setVideoMetadata] id=`%s` meta=`%j`', id, meta)
 
@@ -224,8 +232,11 @@ exports.setVideoMetadata = function(id, meta) {
  */
 
 exports.replaceVideoMetadata = function(id, meta) {
-  this.validate(id, 'String', 'id')
-  this.validate(meta, 'Object', 'metadata')
+  var rej = (
+    this.validate(id, 'String', 'id')
+    || this.validate(meta, 'Object', 'metadata')
+  )
+  if (rej) return rej
 
   debug('[replaceVideoMetadata] id=`%s` meta=`%j`', id, meta)
 
@@ -251,7 +262,8 @@ exports.replaceVideoMetadata = function(id, meta) {
  */
 
 exports.getVideoPlayer = function(id) {
-  this.validate(id, 'String', 'id')
+  var rej = this.validate(id, 'String', 'id')
+  if (rej) return rej
 
   debug('[getVideoPlayer] id=`%s`', id)
 
@@ -274,7 +286,8 @@ exports.getVideoPlayer = function(id) {
  */
 
 exports.getVideoSource = function(id) {
-  this.validate(id, 'String', 'id')
+  var rej = this.validate(id, 'String', 'id')
+  if (rej) return rej
 
   debug('[getVideoSource] id=`%s`', id)
 
@@ -297,7 +310,8 @@ exports.getVideoSource = function(id) {
  */
 
 exports.getVideoStreams = function(id) {
-  this.validate(id, 'String', 'id')
+  var rej = this.validate(id, 'String', 'id')
+  if (rej) return rej
 
   debug('[getVideoStreams] id=`%s`', id)
 
@@ -320,7 +334,8 @@ exports.getVideoStreams = function(id) {
  */
 
 exports.deleteVideo = function(id) {
-  this.validate(id, 'String', 'id')
+  var rej = this.validate(id, 'String', 'id')
+  if (rej) return rej
 
   debug('[deleteVideo] id=`%s`', id)
 
@@ -339,25 +354,185 @@ exports.deleteVideo = function(id) {
  * Shortcut to get all information about a video, the default details
  * call will include all related data aside from the streams and source.
  *
+ *   1. get all possible video info with initial details
+ *   2. find related video streams
+ *   3. find video source information
+ *
  * @param {String} asset id
  * @return {Promise} promise
  */
 
 exports.getFullVideoDetails = function(id) {
-  this.validate(id, 'String', 'id')
+  var rej = this.validate(id, 'String', 'id')
+  if (rej) return rej
 
-  debug('[getFullVideoDetails] id=`%s`', id)
+  debug('[getFullVideoDetails] fetching: id=`%s`', id)
 
-  return Promise
-    .all([
-      this.getVideoDetails(id)
-    , this.getVideoStreams(id)
-    , this.getVideoSource(id)
-    ])
-    .spread(function(details, streams, source) {
-      var resp = details || {}
+  var self = this
+    , resp
+
+  // Run this in order for easier debugging
+  return this
+    .getVideoDetails(id)
+    .then(function(details) {
+      resp = details
+      return self.getVideoStreams(id)
+    })
+    .then(function(streams) {
       resp.streams = streams
+      return self.getVideoSource(id)
+    })
+    .then(function(source) {
+      debug('[getFullVideoDetails] done: id=`%s`', id)
+
       resp.source = source
       return resp
+    })
+}
+
+/**
+ * Shortcut for video create or update, allows an app to be more agnostic
+ *
+ * @param {Object} video data
+ * @return {Promise} ooyala response data
+ */
+
+exports.createOrUpdateVideoAsset = function(video) {
+  var rej = (
+    this.validate(video, 'Object', 'video')
+    || this.validate(video.file_size, 'Number', 'video.file_size')
+  )
+  if (rej) return rej
+
+  var id = video.embed_code
+
+  debug('[createOrUpdateVideoAsset] data=`%j`', video)
+
+  // Determine how to start the workflow, if the `embed_code` is already known, 
+  // then we can assume the video was already created in Backlot, if not, then we 
+  // want to create the initial asset
+  var start = id
+    ? this.updateVideoData(id, _.omit(video, 'embed_code')) 
+    : this.createVideoAsset(video)
+
+  return start
+    .then(function(results) {
+      debug('[createOrUpdateVideoAsset] done: results=`%j`', results)
+      return results
+    })
+}
+
+/**
+ * Create a fully detailed video asset in Ooyala. If the data sent contains an 
+ * `embed_code` property, it will be updated in place instead. Allow for skipping
+ * the first step in the case the application has already handled this, and only 
+ * wants to sync up the rest of the data.
+ *
+ *   1. create or update video data in ooyala
+ *   2. sync remaining related video content
+ *
+ * @param {Object} video data
+ * @param {Boolean} skip first step
+ * @return {Promise} remote video data
+ */
+
+exports.syncVideoAsset = function(video) {
+  var rej = (
+    this.validate(video, 'Object', 'video')
+    || this.validate(video.file_size, 'Number', 'video.file_size')
+  )
+  if (rej) return rej
+
+  var self = this
+    , id = video.embed_code
+    , remoteVideo
+
+  debug('[syncVideoAsset] data=`%j`', video)
+
+  return this
+    .createOrUpdateVideoAsset(video)
+    .then(function(obj) {
+      remoteVideo = obj
+      id || (id = obj.embed_code)
+
+      // Sync remaining content, ensure we have the `embed_code`
+      return self.syncVideoContent(_.extend({
+        embed_code: id
+      }, video))
+    })
+    
+    // Always return the created video object
+    .then(function(results) {
+      debug('[syncVideoAsset] completed: results=`%j`', results)
+
+      return remoteVideo
+    })
+
+    // Add video data to error if available
+    .catch(function(err) {
+      debug('[syncVideoAsset] failed: err=`%s`', err)
+
+      err.video = remoteVideo
+      return Promise.reject(err)
+    })
+}
+
+/**
+ * Sync all related video content
+ *
+ *   1. add any metadata found
+ *   2. sync any labels found with ooyala label storage
+ *   3. assign synced label ids to the video asset
+ *
+ * @param {Object} video data
+ * @return {Promise} video data
+ */
+
+exports.syncVideoContent = function(video) {
+  var rej = (
+    this.validate(video, 'Object', 'video')
+    || this.validate(video.embed_code, 'String', 'video.embed_code')
+  )
+  if (rej) return rej
+  
+  var self = this
+    , id = video.embed_code
+
+  debug('[syncVideoContent] syncing video: id=`%s`', id)
+
+  return Promise
+    .resolve()
+
+    // Set video metadata if available
+    .then(function() {
+      if (!video.metadata) {
+        return
+      }
+      return self.setVideoMetadata(video.embed_code, video.metadata)
+    })
+
+    // Sync up any video labels in backlot before assigning to video, treat any 
+    // non-existing labels as new labels to be created then assigned
+    .then(function() {
+      if (!video.labels) {
+        return []
+      }
+      return self.syncLabels(video.labels)
+    })
+
+    // Assign labels to video if we have any
+    .then(function(ooyalaLabels) {
+      var labelIds = (ooyalaLabels || []).map(function(x) {
+        return x.id
+      })
+      if (!labelIds.length) {
+        return
+      }
+      return self.addVideoLabels(id, labelIds) 
+    })
+
+    .then(function() {
+      debug('[syncVideoAsset] complete: id=`%s`', id)
+      return video
     })
 }

@@ -6,6 +6,7 @@
 
 var tryJSON = require('try-json')
   , varType = require('var-type')
+  , debug = require('debug')('ooyala:errors')
 
 /**
  * Ooyala API Error
@@ -34,15 +35,12 @@ exports.RequestError = class extends exports.Error {
   constructor(resp, req) {
     super()
     this.name = 'OoyalaRequestError'
-    this.request = req
-    this.response = resp
     
     // Extract details from the response
     if (resp) {
-      this.body = resp.body
-      this.statusCode = resp.statusCode
-
       var decoded = exports.decodeMessage(resp)
+
+      this.response = resp.toJSON()
       this.message = decoded.str
       this.messageData = decoded.obj
     }
@@ -54,13 +52,15 @@ exports.RequestError = class extends exports.Error {
  */
 
 var SUB_CLASSES = [
-  'ProcessingVideoError' // Action attempted against an already processing video
-, 'DuplicateVideoError'  // Video asset is a duplicate
-, 'UploadingVideoError'  // Action attempted against an already uploading video
-, 'MissingChunksError'   // Video asset upload had missing or bad chunks
-, 'TooFastError'         // Action attempted against a video too quicky after asset upload
-, 'NotFoundError'        // Asset not found
-, 'UnauthorizedError'    // Invalid auth / api key
+  'ProcessingVideoError'  // Action attempted against an already processing video
+, 'DuplicateVideoError'   // Video asset is a duplicate
+, 'UploadingVideoError'   // Action attempted against an already uploading video
+, 'MissingChunksError'    // Video asset upload had missing or bad chunks
+, 'TooFastError'          // Action attempted against a video too quicky after asset upload
+, 'NotFoundError'         // Asset not found
+, 'UnauthorizedError'     // Invalid auth / api key
+, 'InvalidSignatureError' // Invalid request signature (internal calculation error?)
+, 'BadRequestError'       // Likely missing key parameters
 ]
 SUB_CLASSES.forEach(function(klass) {
   exports[klass] = class extends exports.RequestError {
@@ -92,17 +92,21 @@ exports.ValidationError = class extends exports.Error {
  */
 
 exports.decodeMessage = function(resp) {
-  var message = resp && resp.body && resp.body.message
+  var body = resp && resp.body // && resp.body.message
+  if (body.message) body = body.message
 
-  if (varType(message, 'Object')) {
+  // Check for JSON response
+  if (varType(body, 'Object')) {
     return {
-      str: JSON.stringify(message)
-    , obj: message
+      str: JSON.stringify(body)
+    , obj: body
     }
-  } else if (varType(message, 'String')) {
+  }
+  // Attempt to decode string response (can't trust ooyala responses)
+  if (varType(body, 'String')) {
     return {
-      str: message
-    , obj: tryJSON(message) || null
+      str: body
+    , obj: tryJSON(body) || null
     }
   }
   return {
@@ -126,6 +130,8 @@ exports.getError = function(resp, req) {
     , obj = decoded.obj
     , err
 
+  debug('[getError] calculating: resp=`%j`', resp.toJSON())
+
   // Asset replace call, need to wait for Ooyala to finish processing first
   if (str === "Content cannot be replaced since the asset's status is processing") {
     err = new exports.ProcessingVideoError(resp, req)
@@ -135,9 +141,15 @@ exports.getError = function(resp, req) {
   if (str === "Content cannot be replaced since the asset's status is duplicate") {
     err = new exports.DuplicateVideoError(resp, req)
   }
+  if (~str.indexOf('error: duplicate')) {
+    err = new exports.DuplicateVideoError(resp, req)
+  }
   
   // Either something else is still uploading this video,
   // or it failed to upload and cant recover
+  if (str === 'Content cannot be replaced since the asset\'s status is uploading') {
+    err = new exports.UploadingVideoError(resp, req)
+  }
   if (str === "The asset is already being replaced. The replacement status is uploading") {
     err = new exports.UploadingVideoError(resp, req)
   }
@@ -147,9 +159,14 @@ exports.getError = function(resp, req) {
     err = new exports.TooFastError(resp, req)
   }
   
-  // Video lookup specific, as far as I can tell only one route can 404
-  if (code === 404) {
-    err = new exports.NotFoundError(resp, req)
+  // Invalid signature, likely internal calculation issue :(
+  if (str === 'Invalid signature.') {
+    err = new exports.InvalidSignatureError(resp, req)
+  }
+  
+  // Asset upload / replacement specific
+  if (obj && (obj.missing_chunks || obj.bad_chunks)) {
+    err = new exports.MissingChunksError(resp, req)
   }
   
   // Label lookup specific, doesnt return with a 404 for some reason, but the 
@@ -158,9 +175,9 @@ exports.getError = function(resp, req) {
     err = new exports.NotFoundError(resp, req)
   }
   
-  // Asset upload / replacement specific
-  if (obj && (obj.missing_chunks || obj.bad_chunks)) {
-    err = new exports.MissingChunksError(resp, req)
+  // Video lookup specific, as far as I can tell only one route can 404
+  if (code === 404) {
+    err = new exports.NotFoundError(resp, req)
   }
 
   // Can happen on any request?
@@ -168,15 +185,15 @@ exports.getError = function(resp, req) {
     err = new exports.UnauthorizedError(resp, req)
   }
 
-  // TODO: Really need to track down where each one of these can come from, 
-  // and put the logic within those method calls. This is pretty vague...
-  require('beau').log('ERROR FOUND: ', {
-    code: code
-  , decoded: decoded
-  , url: req.url
-  , err: err
-  })
-  console.trace()
+  // Can happen on any request?
+  if (code === 400) {
+    err = new exports.BadRequestError(resp, req)
+  }
 
-  return err || new exports.Error(resp, req)
+  // Could not determine specific error type, send generic
+  if (!err) {
+    err = new exports.RequestError(resp, req)
+  }
+
+  return err
 }

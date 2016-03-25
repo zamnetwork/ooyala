@@ -5,8 +5,9 @@ Ooyala API
 
 This is a fairly complex API and workflow, this module is meant to be verbose to provide specific logic to each API call as needed.
 
+## WORK IN PROGRESS!
 
-<br/>
+
 Install
 -------
 
@@ -16,7 +17,7 @@ With [npm](https://npmjs.org)
 npm install ooyala
 ```
 
-<br/>
+
 Usage
 -----
 

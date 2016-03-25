@@ -14,7 +14,7 @@
   "licence": "MIT",
   "main": "index.js",
   "scripts": {
-    "mocha": "./node_modules/mocha/bin/mocha -R spec test/test-integration.js",
+    "mocha": "./node_modules/mocha/bin/mocha -R spec test/test-*.js",
     "hint": "./node_modules/jshint/bin/jshint ./",
     "test": "npm run hint && npm run mocha"
   },

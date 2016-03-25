@@ -26,7 +26,12 @@ var Promise = require('bluebird')
  */
 
 function Ooyala(config) {
-  this.validate(config, 'Object', 'config')
+  var err = (
+    this.validate(config, 'Object', 'config', true)
+    || this.validate(config.key, 'String', 'config.key', true)
+    || this.validate(config.secret, 'String', 'config.secret', true)
+  )
+  if (err) throw err
 
   // Set the config defaults
   this.config = _.extend({
@@ -44,6 +49,39 @@ function Ooyala(config) {
  */
 
 _.extend(Ooyala, require('./errors'))
+
+/**
+ * Filter out all empty parameters to prevent signature errors
+ *
+ * @param {Object} params
+ * @return {Object} filtered params
+ */
+
+Ooyala.filterParams = function(params) {
+
+  // Remove any empty array values sent in any param
+  for (var key in params) {
+    var val = params[key]
+
+    if (varType(val, 'Array')) {
+      params[key] = val.slice().filter(function(v) {
+        return v !== '' && typeof v !== 'undefined'
+      })
+    }
+  }
+
+  // Reject any key that would have an empty value
+  return _.pick(params, function(val, key, obj) {
+    var tmp = { [key]: val }
+      , str = qs.stringify(tmp, { skipNulls: true })
+
+    return (
+      str
+      && str !== key
+      && str.indexOf('=') !== str.length - 1
+    )
+  })
+}
 
 /**
  * Custom request wrapper to handle all required API parameters
@@ -66,21 +104,23 @@ _.extend(Ooyala, require('./errors'))
 Ooyala.prototype.request = function(opts) {
   var method = opts.method
     , route = opts.route
-    , params = opts.params || {}
+    , params = Ooyala.filterParams(opts.params || {})
     , options = opts.options || {}
-
-  this.validate(method, 'String', 'method')
-  this.validate(route, 'String', 'route')
-  this.validate(params, 'Object', 'params')
-  this.validate(options, 'Object', 'options')
-
-  var start = Date.now()
+    , start = Date.now()
     , body = options.body
+
+  var rej = (
+    this.validate(method, 'String', 'method')
+    || this.validate(route, 'String', 'route')
+    || this.validate(params, 'Object', 'params')
+    || this.validate(options, 'Object', 'options')
+  )
+  if (rej) return rej
 
   method = method.toUpperCase()
 
   // Add required querystring params
-  params = _.defaults(params || {}, {
+  params = _.defaults(params, {
     api_key: this.config.key
   , expires: Math.floor((Date.now() + this.config.expires) / 1000)
   })
@@ -173,7 +213,7 @@ Ooyala.prototype.request = function(opts) {
 Ooyala.prototype.sign = function(opts) {
   var method = opts.method
     , route = opts.route
-    , params = opts.params || {}
+    , params = Ooyala.filterParams(opts.params || {})
     , body = opts.body
 
   var signature = ''
@@ -223,11 +263,14 @@ Ooyala.prototype.sign = function(opts) {
  * @param {String} arg name / label
  */
 
-Ooyala.prototype.validate = function(x, type, label) {
-  if (varType(x, type)) return
-  var err = new Ooyala.ValidationError(`Invalid '${label}'. Expected: '${type}', Got: '${varType(x)}'`)
+Ooyala.prototype.validate = function(x, types, label, raw) {
+  if (!varType(types, 'Array')) types = [types]
+  if (varType(x, types)) return null
+
+  var err = new Ooyala.ValidationError(`Invalid '${label}'. Expected: '${types.join(' | ')}', Got: '${varType(x)}'`)
   debug('[validate] err=`%s`', err)
-  throw err
+  
+  return raw ? err : Promise.reject(err)
 }
 
 /*!
