@@ -61,6 +61,7 @@ var SUB_CLASSES = [
 , 'UnauthorizedError'     // Invalid auth / api key
 , 'InvalidSignatureError' // Invalid request signature (internal calculation error?)
 , 'BadRequestError'       // Likely missing key parameters
+, 'TooLargeError'         // Thumbnail upload too big?
 ]
 SUB_CLASSES.forEach(function(klass) {
   exports[klass] = class extends exports.RequestError {
@@ -188,6 +189,11 @@ exports.getError = function(resp, req) {
   // Can happen on any request?
   if (code === 400) {
     err = new exports.BadRequestError(resp, req)
+  }
+
+  // Thumbnail too big?
+  if (code === 413) {
+    err = new exports.TooLargeError(resp, req)
   }
 
   // Could not determine specific error type, send generic
