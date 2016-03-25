@@ -1,9 +1,13 @@
 {
   "name": "ooyala",
   "author": "Beau Sorensen <mail@beausorensen.com> (http://github.com/sorensen)",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Ooyala API",
-  "keywords": ["ooyala", "api", "sdk"],
+  "keywords": [
+    "ooyala",
+    "api",
+    "sdk"
+  ],
   "repository": {
     "type": "git",
     "url": "git://github.com/majorleaguesoccer/ooyala.git"
