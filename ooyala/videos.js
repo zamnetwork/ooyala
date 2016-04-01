@@ -512,23 +512,13 @@ exports.syncVideoContent = function(video) {
     })
 
     // Sync up any video labels in backlot before assigning to video, treat any 
-    // non-existing labels as new labels to be created then assigned
+    // non-existing labels as new labels to be created then assigned, remove any
+    // labels assigned to the video not in current data
     .then(function() {
       if (!video.labels) {
         return []
       }
-      return self.syncLabels(video.labels)
-    })
-
-    // Assign labels to video if we have any
-    .then(function(ooyalaLabels) {
-      var labelIds = (ooyalaLabels || []).map(function(x) {
-        return x.id
-      })
-      if (!labelIds.length) {
-        return
-      }
-      return self.addVideoLabels(id, labelIds) 
+      return self.syncVideoLabels(video.labels)
     })
 
     .then(function() {

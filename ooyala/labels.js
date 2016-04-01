@@ -27,6 +27,9 @@ exports.syncLabels = function(labels) {
   return this
     .getLabels()
     .then(function(existing) {
+      var names = existing.map(function(x) {
+        return x.full_name
+      })
 
       // Find all labels sent that already exist
       synced = existing.filter(function(x) {
@@ -34,9 +37,7 @@ exports.syncLabels = function(labels) {
       })
 
       // Find any supplied labels that do not yet exist in Ooyala
-      return _.difference(labels, existing.map(function(x) {
-        return x.full_name
-      }))
+      return _.difference(labels, names)
     })
     .then(function(missing) {
       if (!missing.length) return []
@@ -47,6 +48,76 @@ exports.syncLabels = function(labels) {
       debug('[syncLabels] finished: created=`%j`', created.length)
 
       return _.uniq(synced.concat(created))
+    })
+}
+
+/**
+ * Sync any given labels with Backlot to ensure existence, then, sync the video 
+ * labels with what is given, adding new and removing old. If no labels are sent
+ * then all will be cleared from the video.
+ *
+ * @param {String} ooyala id
+ * @param {Array} label data (empty array ok)
+ * @return {Promise} label sync results
+ */
+
+exports.syncVideoLabels = function(id, labels) {
+  var rej = (
+    this.validate(id, 'String', 'id')
+    || this.validate(labels, 'Array', 'labels')
+  )
+  if (rej) return rej
+
+  var self = this
+    , synced
+    , videoLabels
+    , saved
+
+  debug('[syncVideoLabels] syncing: id=`%s` labels=`%s`', id, labels)
+
+  return this
+
+    // Ensure labels exist in backlot, get full label details object
+    .syncLabels(labels)
+
+    // Find all labels assigned to the video
+    .then(function(resp) {
+      synced = resp
+
+      return self.getVideoLabels(id)
+    })
+
+    // Attach any labels sent not currently on the video
+    .then(function(resp) {
+      videoLabels = resp
+
+      // Extract names for easier comparison
+      var names = videoLabels.map(x => x.full_name)
+
+      // Find any synced label not contained in the video label list
+      var toSave = synced
+        .filter(x => !~names.indexOf(x.full_name))
+        .map(x => x.id)
+
+      return self.addVideoLabels(id, toSave)
+    })
+    .then(function(resp) {
+      saved = resp
+
+      // Extract names for easier comparison
+      var names = synced.map(x => x.full_name)
+
+      // Find any video labels not contained in the synced label list
+      var toRemove = videoLabels
+        .filter(x => !~names.indexOf(x.full_name))
+        .map(x => x.id)
+
+      return self.removeVideoLabels(id, toRemove)
+    })
+    .then(function(removed) {
+      debug('syncVideoLabels] done: id=`%s`', id)
+
+      return synced
     })
 }
 
@@ -193,7 +264,7 @@ exports.addVideoLabels = function(id, labels) {
     })
     .then(function(resp) {
       debug('[addVideoLabels] done: id=`%s` resp=`%j`', id, resp.body)
-      return resp.body
+      return resp.body && resp.body.items || []
     })
 }
 
@@ -222,7 +293,7 @@ exports.removeVideoLabels = function(id, labels) {
       }
     })
     .then(function(resp) {
-      debug('[removeVideoLabels] done: id=`%s` resp=`%j`', id, resp.body)
-      return resp.body
+      debug('[removeVideoLabels] done: id=`%s` statusCode=`%j`', id, resp.statusCode)
+      return true
     })
 }
