@@ -508,7 +508,7 @@ exports.syncVideoContent = function(video) {
       if (!video.metadata) {
         return
       }
-      return self.setVideoMetadata(video.embed_code, video.metadata)
+      return self.setVideoMetadata(id, video.metadata)
     })
 
     // Sync up any video labels in backlot before assigning to video, treat any 
@@ -518,7 +518,7 @@ exports.syncVideoContent = function(video) {
       if (!video.labels) {
         return []
       }
-      return self.syncVideoLabels(video.labels)
+      return self.syncVideoLabels(id, video.labels)
     })
 
     .then(function() {
