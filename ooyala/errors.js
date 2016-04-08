@@ -62,6 +62,7 @@ var SUB_CLASSES = [
 , 'InvalidSignatureError' // Invalid request signature (internal calculation error?)
 , 'BadRequestError'       // Likely missing key parameters
 , 'TooLargeError'         // Thumbnail upload too big?
+, 'HiddenCharacterError'  // UTF-8 control characters
 ]
 SUB_CLASSES.forEach(function(klass) {
   exports[klass] = class extends exports.RequestError {
@@ -159,7 +160,14 @@ exports.getError = function(resp, req) {
   if (~str.indexOf("not enough time since last attempt.")) {
     err = new exports.TooFastError(resp, req)
   }
-  
+   
+  // TODO: Verify this
+  // {"description":["cannot contain hidden chars"]}
+  // Either the name or description contained hidden characters
+  if (~str.indexOf('cannot contain hidden chars')) {
+    err = new exports.HiddenCharacterError(resp, req)
+  }
+
   // Invalid signature, likely internal calculation issue :(
   if (str === 'Invalid signature.') {
     err = new exports.InvalidSignatureError(resp, req)
