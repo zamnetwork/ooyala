@@ -69,9 +69,6 @@ exports.syncVideoLabels = function(id, labels) {
   if (rej) return rej
 
   var self = this
-    , synced
-    , videoLabels
-    , saved
 
   debug('[syncVideoLabels] syncing: id=`%s` labels=`%s`', id, labels)
 
@@ -80,44 +77,15 @@ exports.syncVideoLabels = function(id, labels) {
     // Ensure labels exist in backlot, get full label details object
     .syncLabels(labels)
 
-    // Find all labels assigned to the video
-    .then(function(resp) {
-      synced = resp
+    .then(function(synced) {
+      var labelIds = synced.map(x => x.id)
 
-      return self.getVideoLabels(id)
-    })
-
-    // Attach any labels sent not currently on the video
-    .then(function(resp) {
-      videoLabels = resp
-
-      // Extract names for easier comparison
-      var names = videoLabels.map(x => x.full_name)
-
-      // Find any synced label not contained in the video label list
-      var toSave = synced
-        .filter(x => !~names.indexOf(x.full_name))
-        .map(x => x.id)
-
-      return self.addVideoLabels(id, toSave)
+      return self.replaceVideoLabels(id, labelIds)
     })
     .then(function(resp) {
-      saved = resp
+      debug('syncVideoLabels] done: id=`%s` resp=`%j`', id, resp)
 
-      // Extract names for easier comparison
-      var names = synced.map(x => x.full_name)
-
-      // Find any video labels not contained in the synced label list
-      var toRemove = videoLabels
-        .filter(x => !~names.indexOf(x.full_name))
-        .map(x => x.id)
-
-      return self.removeVideoLabels(id, toRemove)
-    })
-    .then(function(removed) {
-      debug('syncVideoLabels] done: id=`%s`', id)
-
-      return synced
+      return resp
     })
 }
 
@@ -137,9 +105,10 @@ exports.getLabels = function() {
       route: '/v2/labels'
     })
     .then(function(resp) {
-      debug('[getLabels] done: resp=`%s`', resp.body)
+      var items = resp.body && resp.body.items || []
 
-      return resp.body && resp.body.items || []
+      debug('[getLabels] done: found=`%s`', items.length)
+      return items
     })
 }
 
@@ -243,7 +212,7 @@ exports.getVideoLabels = function(id) {
  *
  * @param {String} asset id
  * @param {Array} label ids
- * @return {Promise} promise
+ * @return {Promise} ooyala response
  */
 
 exports.addVideoLabels = function(id, labels) {
@@ -257,9 +226,11 @@ exports.addVideoLabels = function(id, labels) {
 
   return this
     .post({
-      route: `/v2/assets/${id}/labels`
-    , options: { 
-        body: labels 
+      route: `/v2/assets/${id}/labels` // `/${labels.join(',')`
+    , options: {
+
+        // TODO: Figure out if this is supposed to be in the body or URL
+        body: labels.slice()
       }
     })
     .then(function(resp) {
@@ -269,7 +240,60 @@ exports.addVideoLabels = function(id, labels) {
 }
 
 /**
- * Remove labels from a video 
+ *
+ * @param {String} asset id
+ * @param {Array} label ids
+ * @return {Promise} promise
+ */
+
+exports.replaceVideoLabels = function(id, labels) {
+  var rej = (
+    this.validate(id, 'String', 'id')
+    || this.validate(labels, 'Array', 'labels')
+  )
+  if (rej) return rej
+  
+  debug('[replaceVideoLabels] replacing: id=`%s` label=`%s`', id, labels)
+
+  return this
+    .put({
+      // route: `/v2/assets/${id}/labels/${JSON.stringify(labels)}`
+      route: `/v2/assets/${id}/labels`
+    , options: {
+        body: labels.slice()
+      }
+    })
+    .then(function(resp) {
+      debug('[replaceVideoLabels] done: id=`%s` statusCode=`%j`', id, resp.statusCode)
+
+      return resp.body && resp.body.items || []
+    })
+}
+
+/**
+ *
+ * @param {String} asset id
+ * @param {Array} label ids
+ * @return {Promise} promise
+ */
+
+exports.removeAllVideoLabels = function(id) {
+  var rej = this.validate(id, 'String', 'id')
+  if (rej) return rej
+  
+  debug('[removeAllVideoLabels] removing: id=`%s`', id)
+
+  return this
+    .delete({
+      route: `/v2/assets/${id}/labels`
+    })
+    .then(function(resp) {
+      debug('[removeAllVideoLabels] done: id=`%s` statusCode=`%j`', id, resp.statusCode)
+      return null
+    })
+}
+
+/**
  *
  * @param {String} asset id
  * @param {Array} label ids
@@ -283,17 +307,43 @@ exports.removeVideoLabels = function(id, labels) {
   )
   if (rej) return rej
 
-  debug('[removeVideoLabels] adding: id=`%s` labels=`%s`', id, labels)
+    var self = this
+
+  debug('[removeVideoLabels] removing: id=`%s` label=`%s`', id, labels)
+
+  return Promise
+    .map(labels, function(label) {
+      return self.removeVideoLabel(id, label)
+    })
+    .then(function(resp) {
+      debug('[removeVideoLabel] done: id=`%s` statusCode=`%j`', id, resp.statusCode)
+      return null
+    })
+}
+
+/**
+ * Remove a single label from a video 
+ *
+ * @param {String} asset id
+ * @param {Array} label id
+ * @return {Promise} ooyala response
+ */
+
+exports.removeVideoLabel = function(id, labelId) {
+  var rej = (
+    this.validate(id, 'String', 'id')
+    || this.validate(labelId, 'String', 'labelId')
+  )
+  if (rej) return rej
+  
+  debug('[removeVideoLabel] removing: id=`%s` label=`%s`', id, labelId)
 
   return this
     .delete({
-      route: `/v2/assets/${id}/labels`
-    , options: { 
-        body: labels 
-      }
+      route: `/v2/assets/${id}/labels/${labelId}`
     })
     .then(function(resp) {
-      debug('[removeVideoLabels] done: id=`%s` statusCode=`%j`', id, resp.statusCode)
-      return true
+      debug('[removeVideoLabel] done: id=`%s` label=`%s` statusCode=`%j`', id, labelId, resp.statusCode)
+      return null
     })
 }
