@@ -81,7 +81,7 @@ exports.getVideoDetails = function(id) {
     })
     .then(function(resp) {
       debug('[getVideoDetails] done: id=`%s` resp=`%j`', id, resp.body)
-      
+
       return resp.body
     })
 }
@@ -90,7 +90,7 @@ exports.getVideoDetails = function(id) {
  * TODO: Consider validating all data properties sent
  *
  * Step 1a. Create a new video object in Ooyala, looks to set the filename
- * and file size only, likely to tell the API what to look for in 
+ * and file size only, likely to tell the API what to look for in
  * the subsequent asset upload. Responds with `embed_code` as the ID
  *
  * SEE: http://support.ooyala.com/developers/documentation/tasks/api_asset_create.html
@@ -142,13 +142,14 @@ exports.createVideoAsset = function(video) {
  * @return {Promise} promise
  */
 
+exports.updateVideoAsset = 
 exports.updateVideoData = function(id, video) {
   var rej = (
     this.validate(id, 'String', 'id')
     || this.validate(video, 'Object', 'video')
   )
   if (rej) return rej
-  
+
   debug('[updateVideoData] id=`%s` data=`%j`', id, video)
 
   return this
@@ -164,7 +165,7 @@ exports.updateVideoData = function(id, video) {
     })
     .then(function(resp) {
       debug('[updateVideoData] done: resp=`%j`', resp.body)
-    
+
       return resp.body
     })
 }
@@ -188,7 +189,7 @@ exports.getVideoMetadata = function(id) {
     })
     .then(function(resp) {
       debug('[getVideoMetadata] done: id=`%s` resp=`%j`', id, resp.body)
-      
+
       return resp.body
     })
 }
@@ -212,13 +213,13 @@ exports.setVideoMetadata = function(id, meta) {
   return this
     .patch({
       route: `/v2/assets/${id}/metadata`
-    , options: { 
-        body: meta 
+    , options: {
+        body: meta
       }
     })
     .then(function(resp) {
       debug('[setVideoMetadata] done: id=`%s` resp=`%j`', id, resp.body)
-      
+
       return resp.body
     })
 }
@@ -243,13 +244,13 @@ exports.replaceVideoMetadata = function(id, meta) {
   return this
     .put({
       route: `/v2/assets/${id}/metadata`
-    , options: { 
-        body: meta 
+    , options: {
+        body: meta
       }
     })
     .then(function(resp) {
       debug('[replaceVideoMetadata] done: id=`%s` resp=`%j`', id, resp.body)
-      
+
       return resp.body
     })
 }
@@ -273,7 +274,7 @@ exports.getVideoPlayer = function(id) {
     })
     .then(function(resp) {
       debug('[getVideoPlayer] done: resp=`%j`', resp.body)
-      
+
       return resp.body
     })
 }
@@ -297,7 +298,7 @@ exports.getVideoSource = function(id) {
     })
     .then(function(resp) {
       debug('[getVideoSource] done: id=`%s` resp=`%j`', id, resp.body)
-    
+
       return resp.body
     })
 }
@@ -321,7 +322,7 @@ exports.getVideoStreams = function(id) {
     })
     .then(function(resp) {
       debug('[getVideoStreams] done: id=`%s` resp=`%j`', id, resp.body)
-      
+
       return resp.body
     })
 }
@@ -408,11 +409,11 @@ exports.createOrUpdateVideoAsset = function(video) {
 
   debug('[createOrUpdateVideoAsset] data=`%j`', video)
 
-  // Determine how to start the workflow, if the `embed_code` is already known, 
-  // then we can assume the video was already created in Backlot, if not, then we 
+  // Determine how to start the workflow, if the `embed_code` is already known,
+  // then we can assume the video was already created in Backlot, if not, then we
   // want to create the initial asset
   var start = id
-    ? this.updateVideoData(id, _.omit(video, 'embed_code')) 
+    ? this.updateVideoData(id, _.omit(video, 'embed_code'))
     : this.createVideoAsset(video)
 
   return start
@@ -423,9 +424,9 @@ exports.createOrUpdateVideoAsset = function(video) {
 }
 
 /**
- * Create a fully detailed video asset in Ooyala. If the data sent contains an 
+ * Create a fully detailed video asset in Ooyala. If the data sent contains an
  * `embed_code` property, it will be updated in place instead. Allow for skipping
- * the first step in the case the application has already handled this, and only 
+ * the first step in the case the application has already handled this, and only
  * wants to sync up the rest of the data.
  *
  *   1. create or update video data in ooyala
@@ -460,7 +461,7 @@ exports.syncVideoAsset = function(video) {
         embed_code: id
       }, video))
     })
-    
+
     // Always return the created video object
     .then(function(results) {
       debug('[syncVideoAsset] completed: results=`%j`', results)
@@ -494,7 +495,7 @@ exports.syncVideoContent = function(video) {
     || this.validate(video.embed_code, 'String', 'video.embed_code')
   )
   if (rej) return rej
-  
+
   var self = this
     , id = video.embed_code
 
@@ -511,7 +512,7 @@ exports.syncVideoContent = function(video) {
       return self.setVideoMetadata(id, video.metadata)
     })
 
-    // Sync up any video labels in backlot before assigning to video, treat any 
+    // Sync up any video labels in backlot before assigning to video, treat any
     // non-existing labels as new labels to be created then assigned, remove any
     // labels assigned to the video not in current data
     .then(function() {

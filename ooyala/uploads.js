@@ -37,6 +37,7 @@ exports.getVideoUploadUrl = function(id) {
  * @param {String} upload url
  * @param {Buffer} raw asset data
  * @return {Promise} promise
+ * @private
  */
 
 exports._uploadVideoAsset = function(id, urls, buffer, statusCheck) {
@@ -46,7 +47,7 @@ exports._uploadVideoAsset = function(id, urls, buffer, statusCheck) {
     || this.validate(statusCheck, 'Function', 'statusCheck')
   )
   if (rej) return rej
-  
+
   debug('[uploadVideoAsset] starting initial upload: id=`%s` urls=`%s`', id, urls.join(','))
 
   var self = this
@@ -176,8 +177,8 @@ exports.uploadVideoChunk = function(url, chunk) {
 }
 
 /**
- * Step 4a. Mark a video as uploaded, this is also the final check to ensure 
- * that the video upload went successfully. Generally this should only be 
+ * Step 4a. Mark a video as uploaded, this is also the final check to ensure
+ * that the video upload went successfully. Generally this should only be
  * called within the `uploadVideoAsset` method to contain retry logic.
  *
  * @param {String} asset id
@@ -188,7 +189,7 @@ exports.uploadVideoChunk = function(url, chunk) {
 exports.setVideoUploadStatus = function(id, url) {
   var rej = this.validate(id, 'String', 'id')
   if (rej) return rej
-  
+
   debug('[setVideoUploadStatus] id=`%s`', id, url)
 
   return this
@@ -243,7 +244,7 @@ exports.replaceFullVideoAsset = function(id, file)  {
     || this.validate(file, 'Uint8Array', 'file')
   )
   if (rej) return rej
-  
+
   var self = this
 
   debug('[replaceFullVideoAsset] replacing: id=`%s`', id)
@@ -259,7 +260,7 @@ exports.replaceFullVideoAsset = function(id, file)  {
     .then(function(results) {
       debug('[replaceFullVideoAsset] done: id=`%s`', id)
       return results
-    }) 
+    })
 }
 
 /**
@@ -322,7 +323,7 @@ exports.getVideoReplaceUploadUrl = function(id) {
     })
     .then(function(resp) {
       debug('[getVideoReplaceUploadUrl] done: id=`%s` resp=`%j`', id, resp.body)
-      
+
       return resp.body
     })
 }
@@ -352,7 +353,7 @@ exports.uploadFullVideoAsset = function(id, file) {
 
   var self = this
 
-  debug('[createFullVideoAsset] id=`%s`', id)
+  debug('[uploadFullVideoAsset] id=`%s`', id)
 
   return this
     .getVideoUploadUrl(id)
@@ -361,11 +362,11 @@ exports.uploadFullVideoAsset = function(id, file) {
     .then(function(urls) {
       return self.uploadVideoAsset(id, urls, file)
     })
-    
+
     // All done
     .then(function(results) {
-      debug('[createFullVideoAsset] completed: id=`%s` results=`%j`', id, results)
-      
+      debug('[uploadFullVideoAsset] completed: id=`%s` results=`%j`', id, results)
+
       return results
     })
 }

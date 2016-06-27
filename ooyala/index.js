@@ -55,6 +55,7 @@ _.extend(Ooyala, require('./errors'))
  *
  * @param {Object} params
  * @return {Object} filtered params
+ * @private
  */
 
 Ooyala.filterParams = function(params) {
@@ -208,6 +209,7 @@ Ooyala.prototype.request = function(opts) {
  *   - `params` - querystring parameters (optional)
  *   - `body` - request body (optional)
  * @return {String} request signature
+ * @private
  */
 
 Ooyala.prototype.sign = function(opts) {
@@ -230,7 +232,7 @@ Ooyala.prototype.sign = function(opts) {
     signature += prop + '=' + params[prop]
   })
 
-  // Add the body to the main signature if simple type or can 
+  // Add the body to the main signature if simple type or can
   // be converted to JSON
   if (body && !isBuffer) {
     if (bodyType === 'String') signature += body
@@ -250,7 +252,7 @@ Ooyala.prototype.sign = function(opts) {
 
   // debug('[sign] complete, signature=`%s`', signed)
 
-  // Not sure if we need to encode this, still going to be 
+  // Not sure if we need to encode this, still going to be
   // parsed by the `qs` module, which may do the same thing
   return signed.substr(0, 43)
 }
@@ -261,6 +263,7 @@ Ooyala.prototype.sign = function(opts) {
  * @param {Any} arg to check
  * @param {String} expected type
  * @param {String} arg name / label
+ * @private
  */
 
 Ooyala.prototype.validate = function(x, types, label, raw) {
@@ -269,7 +272,7 @@ Ooyala.prototype.validate = function(x, types, label, raw) {
 
   var err = new Ooyala.ValidationError(`Invalid '${label}'. Expected: '${types.join(' | ')}', Got: '${varType(x)}'`)
   debug('[validate] err=`%s`', err)
-  
+
   return raw ? err : Promise.reject(err)
 }
 

@@ -9,87 +9,6 @@ var Promise = require('bluebird')
   , debug = require('debug')('ooyala:labels')
 
 /**
- * Add all labels provided that are not currently stored in Ooyala
- *
- * @param {Array} labels to sync up
- * @return {Promise} promise
- */
-
-exports.syncLabels = function(labels) {
-  var rej = this.validate(labels, 'Array', 'labels')
-  if (rej) return rej
-  
-  var self = this
-    , synced
-
-  debug('[syncLabels] starting: labels=`%j`', labels)
-
-  return this
-    .getLabels()
-    .then(function(existing) {
-      var names = existing.map(function(x) {
-        return x.full_name
-      })
-
-      // Find all labels sent that already exist
-      synced = existing.filter(function(x) {
-        return ~labels.indexOf(x.full_name)
-      })
-
-      // Find any supplied labels that do not yet exist in Ooyala
-      return _.difference(labels, names)
-    })
-    .then(function(missing) {
-      if (!missing.length) return []
-
-      return Promise.map(missing, self.createLabel.bind(self))
-    })
-    .then(function(created) {
-      debug('[syncLabels] finished: created=`%j`', created.length)
-
-      return _.uniq(synced.concat(created))
-    })
-}
-
-/**
- * Sync any given labels with Backlot to ensure existence, then, sync the video 
- * labels with what is given, adding new and removing old. If no labels are sent
- * then all will be cleared from the video.
- *
- * @param {String} ooyala id
- * @param {Array} label data (empty array ok)
- * @return {Promise} label sync results
- */
-
-exports.syncVideoLabels = function(id, labels) {
-  var rej = (
-    this.validate(id, 'String', 'id')
-    || this.validate(labels, 'Array', 'labels')
-  )
-  if (rej) return rej
-
-  var self = this
-
-  debug('[syncVideoLabels] syncing: id=`%s` labels=`%s`', id, labels)
-
-  return this
-
-    // Ensure labels exist in backlot, get full label details object
-    .syncLabels(labels)
-
-    .then(function(synced) {
-      var labelIds = synced.map(x => x.id)
-
-      return self.replaceVideoLabels(id, labelIds)
-    })
-    .then(function(resp) {
-      debug('syncVideoLabels] done: id=`%s` resp=`%j`', id, resp)
-
-      return resp
-    })
-}
-
-/**
  * Get all labels in Ooyala
  *
  * SEE: http://support.ooyala.com/developers/documentation/tasks/api_asset_associate_with_labels.html
@@ -138,8 +57,8 @@ exports.getLabelDetails = function(name) {
 }
 
 /**
- * Create a new label in Ooyala with the given name, all 
- * other data auto created by Ooyala 
+ * Create a new label in Ooyala with the given name, all
+ * other data auto created by Ooyala
  *
  * @param {String} label name
  * @return {Promise} promise
@@ -185,10 +104,53 @@ exports.deleteLabel = function(id) {
 }
 
 /**
+* Add all labels provided that are not currently stored in Ooyala
+*
+* @param {Array} labels to sync up
+* @return {Promise} promise
+*/
+
+exports.syncLabels = function(labels) {
+var rej = this.validate(labels, 'Array', 'labels')
+if (rej) return rej
+
+var self = this
+  , synced
+
+debug('[syncLabels] starting: labels=`%j`', labels)
+
+return this
+  .getLabels()
+  .then(function(existing) {
+    var names = existing.map(function(x) {
+      return x.full_name
+    })
+
+    // Find all labels sent that already exist
+    synced = existing.filter(function(x) {
+      return ~labels.indexOf(x.full_name)
+    })
+
+    // Find any supplied labels that do not yet exist in Ooyala
+    return _.difference(labels, names)
+  })
+  .then(function(missing) {
+    if (!missing.length) return []
+
+    return Promise.map(missing, self.createLabel.bind(self))
+  })
+  .then(function(created) {
+    debug('[syncLabels] finished: created=`%j`', created.length)
+
+    return _.uniq(synced.concat(created))
+  })
+}
+
+/**
  * Get a list of all labels associated with a video
  *
  * @param {String} asset id
- * @return {Promise} promise
+ * @return {Promise} label details list
  */
 
 exports.getVideoLabels = function(id) {
@@ -252,7 +214,7 @@ exports.replaceVideoLabels = function(id, labels) {
     || this.validate(labels, 'Array', 'labels')
   )
   if (rej) return rej
-  
+
   debug('[replaceVideoLabels] replacing: id=`%s` label=`%s`', id, labels)
 
   return this
@@ -280,7 +242,7 @@ exports.replaceVideoLabels = function(id, labels) {
 exports.removeAllVideoLabels = function(id) {
   var rej = this.validate(id, 'String', 'id')
   if (rej) return rej
-  
+
   debug('[removeAllVideoLabels] removing: id=`%s`', id)
 
   return this
@@ -322,7 +284,7 @@ exports.removeVideoLabels = function(id, labels) {
 }
 
 /**
- * Remove a single label from a video 
+ * Remove a single label from a video
  *
  * @param {String} asset id
  * @param {Array} label id
@@ -335,7 +297,7 @@ exports.removeVideoLabel = function(id, labelId) {
     || this.validate(labelId, 'String', 'labelId')
   )
   if (rej) return rej
-  
+
   debug('[removeVideoLabel] removing: id=`%s` label=`%s`', id, labelId)
 
   return this
@@ -346,4 +308,42 @@ exports.removeVideoLabel = function(id, labelId) {
       debug('[removeVideoLabel] done: id=`%s` label=`%s` statusCode=`%j`', id, labelId, resp.statusCode)
       return null
     })
+}
+
+/**
+* Sync any given labels with Backlot to ensure existence, then, sync the video
+* labels with what is given, adding new and removing old. If no labels are sent
+* then all will be cleared from the video.
+*
+* @param {String} ooyala id
+* @param {Array} label data (empty array ok)
+* @return {Promise} label sync results
+*/
+
+exports.syncVideoLabels = function(id, labels) {
+var rej = (
+  this.validate(id, 'String', 'id')
+  || this.validate(labels, 'Array', 'labels')
+)
+if (rej) return rej
+
+var self = this
+
+debug('[syncVideoLabels] syncing: id=`%s` labels=`%s`', id, labels)
+
+return this
+
+  // Ensure labels exist in backlot, get full label details object
+  .syncLabels(labels)
+
+  .then(function(synced) {
+    var labelIds = synced.map(x => x.id)
+
+    return self.replaceVideoLabels(id, labelIds)
+  })
+  .then(function(resp) {
+    debug('syncVideoLabels] done: id=`%s` resp=`%j`', id, resp)
+
+    return resp
+  })
 }
