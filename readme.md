@@ -448,63 +448,63 @@ api
 ```
 
 
-#### api.deleteVideo(id)
+#### api.deleteVideo(videoId)
 
 Delete a video
 
-```js
-```
+* `videoId` - String - video id / embed code
 
-#### api.getVideoDetails(id)
+
+#### api.getVideoDetails(videoId)
 
 Get the top level details of a video
 
-```js
-```
+* `videoId` - String - video id / embed code
 
-#### api.getVideoMetadata(id)
+
+#### api.getVideoMetadata(videoId)
 
 Get associated video metadata
 
-```js
-```
+* `videoId` - String - video id / embed code
 
-#### api.setVideoMetadata(id, metadata)
+
+#### api.setVideoMetadata(videoId, metadata)
 
 Set the video metadata
 
-```js
-```
+* `videoId` - String - video id / embed code
+* `metadata` - Object - metadata
 
-#### api.getVideoPlayer(id)
+
+#### api.getVideoPlayer(videoId)
 
 Get the video player information
 
-```js
-```
+* `videoId` - String - video id / embed code
 
-#### api.getVideoSource(id)
+
+#### api.getVideoSource(videoId)
 
 Get all video source information
 
-```js
-```
+* `videoId` - String - video id / embed code
 
-#### api.getVideoStreams(id)
+
+#### api.getVideoStreams(videoId)
 
 Get all video streams
 
-```js
-```
+* `videoId` - String - video id / embed code
 
 
-#### api.getFullVideoDetails(id)
+#### api.getFullVideoDetails(videoId)
 
 Shortcut for getting all related video data from Ooyala, includes the following
 related content: `metadata`, `labels`, `player`, `source_file_info`,
 `primary_preview_image`, and `streams`.
 
-* `id` - String - asset id
+* `videoId` - String - video id / embed code
 
 ```js
 api
@@ -562,6 +562,10 @@ Workflow for creating a full video asset in Ooyala using the following steps:
 4. Mark video as uploaded
 
 [Ooyala Documentation](http://support.ooyala.com/developers/documentation/tasks/api_asset_upload.html)
+
+* `videoData` - Object - full video object
+* `buffer` - Buffer|Uint8Array - raw asset data
+
 
 ```js
 fs.readFile('video.mp4', function(err, buffer) {
@@ -666,10 +670,15 @@ upload the asset.
 
 
 #### api.setVideoUploadStatus(videoId)
-#### api.setVideoReplaceUploadStatus(videoId)
 
 Once finished uploading all data chunks to all upload URLs, you must (for whatever reason)
 tell the Ooyala API that you have finished uploading.
+
+* `videoId` - String - video id
+
+#### api.setVideoReplaceUploadStatus(videoId)
+
+Same as above but for replacement workflow
 
 * `videoId` - String - video id
 
@@ -772,9 +781,9 @@ all error states from Backlot. All following classes are derived from this.
 
 Given that a request happened, all `RequestError` classes should have the following:
 
-`response` - request module JSON response
-`message` - string decoded ooyala response
-`messageData` - object decoded ooyala response
+* `response` - request module JSON response
+* `message` - string decoded ooyala response
+* `messageData` - object decoded ooyala response
 
 The string data should always exist, some error responses from Ooyala contain JSON
 data, or *are* themselves, JSON data, and some are simply string responses. So,
