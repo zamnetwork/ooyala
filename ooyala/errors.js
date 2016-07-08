@@ -15,7 +15,7 @@ var tryJSON = require('try-json')
  * @param {Object} original api request
  */
 
-exports.Error = 
+exports.Error =
 exports.OoyalaError = class extends Error {
   constructor(message) {
     super('OoyalaError')
@@ -35,7 +35,7 @@ exports.RequestError = class extends exports.Error {
   constructor(resp, req) {
     super()
     this.name = 'OoyalaRequestError'
-    
+
     // Extract details from the response
     if (resp) {
       var decoded = exports.decodeMessage(resp)
@@ -86,7 +86,7 @@ exports.ValidationError = class extends exports.Error {
 }
 
 /**
- * Ooyala response message normalization, sometimes 
+ * Ooyala response message normalization, sometimes
  * strings are sent, other times objects
  *
  * @param {Object} api response
@@ -130,84 +130,80 @@ exports.getError = function(resp, req) {
     , code = resp.statusCode
     , str = decoded.str
     , obj = decoded.obj
-    , err
 
   debug('[getError] calculating: resp=`%j`', resp.toJSON())
 
   // Asset replace call, need to wait for Ooyala to finish processing first
   if (str === "Content cannot be replaced since the asset's status is processing") {
-    err = new exports.ProcessingVideoError(resp, req)
+    return new exports.ProcessingVideoError(resp, req)
   }
-  
+
   // Asset replace call, there is really no way out of this once it happens
   if (str === "Content cannot be replaced since the asset's status is duplicate") {
-    err = new exports.DuplicateVideoError(resp, req)
+    return new exports.DuplicateVideoError(resp, req)
   }
   if (~str.indexOf('error: duplicate')) {
-    err = new exports.DuplicateVideoError(resp, req)
+    return new exports.DuplicateVideoError(resp, req)
   }
-  
+
   // Either something else is still uploading this video,
   // or it failed to upload and cant recover
   if (str === 'Content cannot be replaced since the asset\'s status is uploading') {
-    err = new exports.UploadingVideoError(resp, req)
+    return new exports.UploadingVideoError(resp, req)
   }
+
   if (str === "The asset is already being replaced. The replacement status is uploading") {
-    err = new exports.UploadingVideoError(resp, req)
+    return new exports.UploadingVideoError(resp, req)
   }
-  
+
   // Either the initial call to replace the asset, or the upload itself
   if (~str.indexOf("not enough time since last attempt.")) {
-    err = new exports.TooFastError(resp, req)
+    return new exports.TooFastError(resp, req)
   }
-   
+
   // TODO: Verify this
   // {"description":["cannot contain hidden chars"]}
   // Either the name or description contained hidden characters
   if (~str.indexOf('cannot contain hidden chars')) {
-    err = new exports.HiddenCharacterError(resp, req)
+    return new exports.HiddenCharacterError(resp, req)
   }
 
   // Invalid signature, likely internal calculation issue :(
   if (str === 'Invalid signature.') {
-    err = new exports.InvalidSignatureError(resp, req)
+    return new exports.InvalidSignatureError(resp, req)
   }
-  
+
   // Asset upload / replacement specific
   if (obj && (obj.missing_chunks || obj.bad_chunks)) {
-    err = new exports.MissingChunksError(resp, req)
+    return new exports.MissingChunksError(resp, req)
   }
-  
-  // Label lookup specific, doesnt return with a 404 for some reason, but the 
+
+  // Label lookup specific, doesnt return with a 404 for some reason, but the
   // body is different from the normal response
   if (obj && obj.missing_labels) {
-    err = new exports.NotFoundError(resp, req)
+    return new exports.NotFoundError(resp, req)
   }
-  
+
   // Video lookup specific, as far as I can tell only one route can 404
   if (code === 404) {
-    err = new exports.NotFoundError(resp, req)
+    return new exports.NotFoundError(resp, req)
   }
 
   // Can happen on any request?
   if (code === 401) {
-    err = new exports.UnauthorizedError(resp, req)
+    return new exports.UnauthorizedError(resp, req)
   }
 
   // Can happen on any request?
   if (code === 400) {
-    err = new exports.BadRequestError(resp, req)
+    return new exports.BadRequestError(resp, req)
   }
 
   // Thumbnail too big?
   if (code === 413) {
-    err = new exports.TooLargeError(resp, req)
+    return new exports.TooLargeError(resp, req)
   }
 
   // Could not determine specific error type, send generic
-  if (!err) {
-    err = new exports.RequestError(resp, req)
-  }
-
-  return err
+  return new exports.RequestError(resp, req)
 }
