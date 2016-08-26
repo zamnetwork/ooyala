@@ -61,7 +61,7 @@ Uploading
 var fs = require('fs')
 
 
-fs.readFile('/tmp/asset.mp4', 'utf8', function(err, buffer) {
+fs.readFile('/tmp/asset.mp4', function(err, buffer) {
 
   // Setup our new video asset. This example can be used as an `update/replacement`
   // for existing videos if an `embed_code` property is added.
