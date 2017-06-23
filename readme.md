@@ -621,6 +621,18 @@ using the `setVideoToUploadedThumbnail` method.
 
 
 <br/>
+Closed Captions
+----------------
+
+#### api.uploadVideoCCFile(videoId, ccFileBuffer))
+
+Upload a closed captions file buffer for a video
+
+* `videoId` - String - video id
+* `ccFileBuffer` - Buffer|Uint8Array - closed caption file buffer
+
+
+<br/>
 Asset Upload
 ------------
 
