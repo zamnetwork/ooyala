@@ -4,22 +4,17 @@
  * Dependencies
  */
 
-var debug = require('debug')('ooyala:thumbnails')
+var debug = require('debug')('ooyala:closedCaptions')
 
 /**
- * TODO: There is a size limit on what can be sent, no idea what that limit
- * actually is. If found, add it here for validation
- *
- * Upload thumbnail image as the custom image for the video.
- * This does not automatically set the video to use this image
- * though, must call the `setVideoToUploadedThumbnail` method
+ * Upload Closed Caption file for video asset
  *
  * @param {String} asset id
  * @param {Buffer} caption file contents
  * @return {Promise} promise
  */
 
-exports.uploadVideoCCFile = function(id, file) {
+exports.uploadVideoClosedCaptions = function(id, file) {
 
   var rej = (
     this.validate(id, 'String', 'id')
@@ -27,7 +22,7 @@ exports.uploadVideoCCFile = function(id, file) {
   )
   if (rej) return rej
 
-  debug('[uploadVideoCCFile] id=`%s`', id)
+  debug('[uploadVideoClosedCaptions] id=`%s`', id)
 
   return this
     .put({
@@ -37,7 +32,7 @@ exports.uploadVideoCCFile = function(id, file) {
       }
     })
     .then(function(resp) {
-      debug('[uploadVideoCCFile] done: id=`%s` resp=`%j`', id, resp.body)
+      debug('[uploadVideoClosedCaptions] done: id=`%s` resp=`%j`', id, resp.body)
 
       return resp.body
     })
