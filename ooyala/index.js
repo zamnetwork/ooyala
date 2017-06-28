@@ -284,6 +284,7 @@ _.extend(Ooyala.prototype, require('./labels'))
 _.extend(Ooyala.prototype, require('./thumbnails'))
 _.extend(Ooyala.prototype, require('./videos'))
 _.extend(Ooyala.prototype, require('./uploads'))
+_.extend(Ooyala.prototype, require('./closed-captioning'))
 
 /*!
  * Exports

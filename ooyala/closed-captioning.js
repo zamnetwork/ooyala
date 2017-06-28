@@ -18,7 +18,7 @@ exports.uploadVideoClosedCaptions = function(id, file) {
 
   var rej = (
     this.validate(id, 'String', 'id')
-    || this.validate(file, 'Uint8Array', 'file')
+    || this.validate(file, 'String', 'file')
   )
   if (rej) return rej
 
@@ -29,6 +29,9 @@ exports.uploadVideoClosedCaptions = function(id, file) {
       route: `/v2/assets/${id}/closed_captions`
     , options: {
         body: file
+      , headers: {
+          'Content-Type': 'text/html'
+        }
       }
     })
     .then(function(resp) {
