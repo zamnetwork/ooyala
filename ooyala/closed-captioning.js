@@ -5,6 +5,8 @@
  */
 
 var debug = require('debug')('ooyala:closedCaptions')
+  , StringDecoder = require('string_decoder').StringDecoder
+  , varType = require('var-type')
 
 /**
  * Upload Closed Caption file for video asset
@@ -15,10 +17,17 @@ var debug = require('debug')('ooyala:closedCaptions')
  */
 
 exports.uploadVideoClosedCaptions = function(id, file) {
+  var contents = file
+
+  if (varType(file, 'Uint8Array')) {
+    var decoder = new StringDecoder('utf8')
+    contents = decoder.write(contents)
+    decoder.end()
+  }
 
   var rej = (
     this.validate(id, 'String', 'id')
-    || this.validate(file, 'String', 'file')
+    || this.validate(contents, 'String', 'file')
   )
   if (rej) return rej
 
@@ -28,7 +37,7 @@ exports.uploadVideoClosedCaptions = function(id, file) {
     .put({
       route: `/v2/assets/${id}/closed_captions`
     , options: {
-        body: file
+        body: contents
       , headers: {
           'Content-Type': 'text/html'
         }

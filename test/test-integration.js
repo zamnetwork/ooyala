@@ -8,13 +8,14 @@ var Promise = require('bluebird')
   , assert = require('assert')
   , fs = require('fs')
   , path = require('path')
+  , StringDecoder =  require('string_decoder').StringDecoder
 
 // Storage
 var LABEL_NAME = '/HELIOS_TEST'
   , REMOTE_VIDEO
   , ASSET_ID = 'asdf'
 
-/** 
+/**
  * Config helpers
  *
  * @param {String} filepath
@@ -120,10 +121,10 @@ describe('Integration', function() {
       var video = {
         name: 'Helios Test'
       , description: 'Please delete me'
-      , labels: [ 
+      , labels: [
           LABEL_NAME
         , '/Channels/Match Highlights'
-        , '/Games/2015/837621' 
+        , '/Games/2015/837621'
         ]
       , file_name: 'helios-test-' + Date.now() + '.mp4' // determine if this is unique vs. the actual asset
       , metadata: {
@@ -140,7 +141,7 @@ describe('Integration', function() {
           .createOrUpdateVideoAsset(video)
           .then(function(result) {
             var id = (result || {}).embed_code || 'test'
-            
+
             return api.uploadFullVideoAsset(id, buff)
           })
           .then(function(result) {
@@ -161,10 +162,44 @@ describe('Integration', function() {
         .getFullVideoDetails(ASSET_ID)
         .then(function(result) {
           // console.log('getdetails: ', result)
-          
+
           done()
         })
         .catch(done)
+    })
+
+    it('uploadVideoClosedCaptions with a buffer', function(done) {
+      fs.readFile(__dirname + '/data/closed-caption.vtt', function(err, buff) {
+        if (err) return done(err)
+
+        api
+          .uploadVideoClosedCaptions(ASSET_ID, buff)
+          .then(function(result) {
+            if (MOCK) return done()
+            assert(result)
+            done()
+          })
+          .catch(done)
+      })
+    })
+
+    it('uploadVideoClosedCaptions with a string', function(done) {
+      fs.readFile(__dirname + '/data/closed-caption.vtt', function(err, buff) {
+        if (err) return done(err)
+
+        var decoder = new StringDecoder('utf8')
+        var contents = decoder.write(buff)
+        decoder.end()
+
+        api
+          .uploadVideoClosedCaptions(ASSET_ID, contents)
+          .then(function(result) {
+            if (MOCK) return done()
+            assert(result)
+            done()
+          })
+          .catch(done)
+      })
     })
 
     it('uploadVideoThumbnail', function(done) {
@@ -297,7 +332,7 @@ describe('Integration', function() {
         .getLabelDetails(LABEL_NAME)
         .then(function(result) {
           if (MOCK) return done()
-          
+
           LABEL = result
           done()
         })

@@ -176,7 +176,6 @@ fetch(start, delay)
 
 
 
-<br/>
 API
 -------
 
@@ -258,7 +257,6 @@ var signature = api.sign({
 ```
 
 
-<br/>
 Labels
 ------
 
@@ -327,7 +325,6 @@ api.syncLabels(labels).then(function(labelArray) {})
 ```
 
 
-<br/>
 Video Labels
 ------------
 
@@ -424,7 +421,6 @@ api.syncVideoLabels('asset_id', [
 
 
 
-<br/>
 Video General
 -------------
 
@@ -548,7 +544,6 @@ api
 
 
 
-<br/>
 Video Asset Creation
 --------------------
 
@@ -583,7 +578,6 @@ fs.readFile('video.mp4', function(err, buffer) {
 ```
 
 
-<br/>
 Thumbnails
 ----------------
 
@@ -620,7 +614,6 @@ using the `setVideoToUploadedThumbnail` method.
 
 
 
-<br/>
 Closed Captions
 ----------------
 
@@ -632,7 +625,6 @@ Upload a closed captions file buffer for a video
 * `ccFileBuffer` - Buffer|Uint8Array - closed caption file buffer
 
 
-<br/>
 Asset Upload
 ------------
 
@@ -705,7 +697,6 @@ Update an existing video's data in ooyala.
 
 
 
-<br/>
 Asset Replacement
 -----------------
 
@@ -867,7 +858,6 @@ should take care of this issue for you. If encountered, please report.
 
 
 
-<br/>
 License
 -------
 
