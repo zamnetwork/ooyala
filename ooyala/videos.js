@@ -4,10 +4,10 @@
  * Dependencies
  */
 
-var Promise = require('bluebird')
-  , _ = require('underscore')
-  , latinize = require('latinize')
-  , debug = require('debug')('ooyala:videos')
+var Promise = require('bluebird'),
+    _ = require('underscore'),
+    latinize = require('latinize'),
+    debug = require('debug')('ooyala:videos')
 
 /**
  * Search the API for videos
@@ -24,33 +24,31 @@ var Promise = require('bluebird')
  */
 
 exports.searchVideos = function(params) {
-  var rej = this.validate(params, ['Object', 'Undefined'], 'params')
-  if (rej) return rej
+    var rej = this.validate(params, ['Object', 'Undefined'], 'params')
+    if (rej) return rej
 
-  debug('[searchVideos] searching: params=`%j`', params)
+    debug('[searchVideos] searching: params=`%j`', params)
 
-  return this
-    .get({
-      route: '/v2/assets'
-    , params: _.extend({
-        // Process the earlier videos first, we want FIFO
-        orderby: 'created_at ascending'
+    return this
+        .get({
+            route: '/v2/assets',
+            params: _.extend({
+                // Process the earlier videos first, we want FIFO
+                orderby: 'created_at ascending'
 
-        // Reduce number of API calls and get data upfront
-      , include: [
-          'metadata'
-        , 'labels'
-        , 'player'
-        , 'primary_preview_image'
-        ].join(',')
-      }, params || {})
-    })
-    .then(function(resp) {
-      var items = resp.body && resp.body.items || []
+                    // Reduce number of API calls and get data upfront
+                    ,
+                include: [
+                    'metadata', 'labels', 'player', 'primary_preview_image'
+                ].join(',')
+            }, params || {})
+        })
+        .then(function(resp) {
+            var items = resp.body && resp.body.items || []
 
-      debug('[searchVideos] found=`%s`', items.length)
-      return items
-    })
+            debug('[searchVideos] found=`%s`', items.length)
+            return items
+        })
 }
 
 /**
@@ -61,29 +59,26 @@ exports.searchVideos = function(params) {
  */
 
 exports.getVideoDetails = function(id) {
-  var rej = this.validate(id, 'String', 'id')
-  if (rej) return rej
+    var rej = this.validate(id, 'String', 'id')
+    if (rej) return rej
 
-  debug('[getVideoDetails] id=`%s`', id)
+    debug('[getVideoDetails] id=`%s`', id)
 
-  return this
-    .get({
-      route: `/v2/assets/${id}`
-    , params: {
-        // Reduce number of API calls and get data upfront
-        include: [
-          'metadata'
-        , 'labels'
-        , 'player'
-        , 'primary_preview_image'
-        ].join(',')
-      }
-    })
-    .then(function(resp) {
-      debug('[getVideoDetails] done: id=`%s` resp=`%j`', id, resp.body)
+    return this
+        .get({
+            route: `/v2/assets/${id}`,
+            params: {
+                // Reduce number of API calls and get data upfront
+                include: [
+                    'metadata', 'labels', 'player', 'primary_preview_image'
+                ].join(',')
+            }
+        })
+        .then(function(resp) {
+            debug('[getVideoDetails] done: id=`%s` resp=`%j`', id, resp.body)
 
-      return resp.body
-    })
+            return resp.body
+        })
 }
 
 /**
@@ -104,31 +99,31 @@ exports.getVideoDetails = function(id) {
  */
 
 exports.createVideoAsset = function(video) {
-  var rej = this.validate(video, 'Object', 'video')
-  if (rej) return rej
+    var rej = this.validate(video, 'Object', 'video')
+    if (rej) return rej
 
-  debug('[createVideoAsset] adding video to ooyala, data=`%j`', video)
+    debug('[createVideoAsset] adding video to ooyala, data=`%j`', video)
 
-  return this
-    .post({
-      route: '/v2/assets'
-    , options: {
-        // SEE: http://support.ooyala.com/developers/documentation/api/asset_properties.html#asset_properties
-        body: _.extend({}, video, {
-          asset_type: 'video'
-        , name: latinize(video.name || '')
-        , description: latinize(video.description || '')
-        , file_name: video.file_name
-        , file_size: video.file_size
-        , chunk_size: this.config.chunkSize
-        , hosted_at: video.hosted_at ? encodeURI(decodeURI(video.hosted_at)) : null
+    return this
+        .post({
+            route: '/v2/assets',
+            options: {
+                // SEE: http://support.ooyala.com/developers/documentation/api/asset_properties.html#asset_properties
+                body: _.extend({}, video, {
+                    asset_type: 'video',
+                    name: latinize(video.name || ''),
+                    description: latinize(video.description || ''),
+                    file_name: video.file_name,
+                    file_size: video.file_size,
+                    chunk_size: this.config.chunkSize,
+                    hosted_at: video.hosted_at ? encodeURI(decodeURI(video.hosted_at)) : null
+                })
+            }
         })
-      }
-    })
-    .then(function(resp) {
-      debug('[createVideoAsset] done: resp=`%j`', resp.body)
-      return resp.body
-    })
+        .then(function(resp) {
+            debug('[createVideoAsset] done: resp=`%j`', resp.body)
+            return resp.body
+        })
 }
 
 /**
@@ -142,33 +137,33 @@ exports.createVideoAsset = function(video) {
  * @return {Promise} promise
  */
 
-exports.updateVideoAsset = 
-exports.updateVideoData = function(id, video) {
-  var rej = (
-    this.validate(id, 'String', 'id')
-    || this.validate(video, 'Object', 'video')
-  )
-  if (rej) return rej
+exports.updateVideoAsset =
+    exports.updateVideoData = function(id, video) {
+        var rej = (
+            this.validate(id, 'String', 'id') ||
+            this.validate(video, 'Object', 'video')
+        )
+        if (rej) return rej
 
-  debug('[updateVideoData] id=`%s` data=`%j`', id, video)
+        debug('[updateVideoData] id=`%s` data=`%j`', id, video)
 
-  return this
-    .patch({
-      route: `/v2/assets/${id}`
-    , options: {
-        body: _.extend({}, video, {
-          name: latinize(video.name || '')
-        , description: latinize(video.description || '')
-        , hosted_at: video.hosted_at ? encodeURI(decodeURI(video.hosted_at)) : null
-        })
-      }
-    })
-    .then(function(resp) {
-      debug('[updateVideoData] done: resp=`%j`', resp.body)
+        return this
+            .patch({
+                route: `/v2/assets/${id}`,
+                options: {
+                    body: _.extend({}, video, {
+                        name: latinize(video.name || ''),
+                        description: latinize(video.description || ''),
+                        hosted_at: video.hosted_at ? encodeURI(decodeURI(video.hosted_at)) : null
+                    })
+                }
+            })
+            .then(function(resp) {
+                debug('[updateVideoData] done: resp=`%j`', resp.body)
 
-      return resp.body
-    })
-}
+                return resp.body
+            })
+    }
 
 /**
  * Get video metadata (not sure whats different about this from normal details)
@@ -178,20 +173,20 @@ exports.updateVideoData = function(id, video) {
  */
 
 exports.getVideoMetadata = function(id) {
-  var rej = this.validate(id, 'String', 'id')
-  if (rej) return rej
+    var rej = this.validate(id, 'String', 'id')
+    if (rej) return rej
 
-  debug('[getVideoMetadata] id=`%s`', id)
+    debug('[getVideoMetadata] id=`%s`', id)
 
-  return this
-    .get({
-      route: `/v2/assets/${id}/metadata`
-    })
-    .then(function(resp) {
-      debug('[getVideoMetadata] done: id=`%s` resp=`%j`', id, resp.body)
+    return this
+        .get({
+            route: `/v2/assets/${id}/metadata`
+        })
+        .then(function(resp) {
+            debug('[getVideoMetadata] done: id=`%s` resp=`%j`', id, resp.body)
 
-      return resp.body
-    })
+            return resp.body
+        })
 }
 
 /**
@@ -202,26 +197,26 @@ exports.getVideoMetadata = function(id) {
  */
 
 exports.setVideoMetadata = function(id, meta) {
-  var rej = (
-    this.validate(id, 'String', 'id')
-    || this.validate(meta, 'Object', 'metadata')
-  )
-  if (rej) return rej
+    var rej = (
+        this.validate(id, 'String', 'id') ||
+        this.validate(meta, 'Object', 'metadata')
+    )
+    if (rej) return rej
 
-  debug('[setVideoMetadata] id=`%s` meta=`%j`', id, meta)
+    debug('[setVideoMetadata] id=`%s` meta=`%j`', id, meta)
 
-  return this
-    .patch({
-      route: `/v2/assets/${id}/metadata`
-    , options: {
-        body: meta
-      }
-    })
-    .then(function(resp) {
-      debug('[setVideoMetadata] done: id=`%s` resp=`%j`', id, resp.body)
+    return this
+        .patch({
+            route: `/v2/assets/${id}/metadata`,
+            options: {
+                body: meta
+            }
+        })
+        .then(function(resp) {
+            debug('[setVideoMetadata] done: id=`%s` resp=`%j`', id, resp.body)
 
-      return resp.body
-    })
+            return resp.body
+        })
 }
 
 /**
@@ -233,26 +228,26 @@ exports.setVideoMetadata = function(id, meta) {
  */
 
 exports.replaceVideoMetadata = function(id, meta) {
-  var rej = (
-    this.validate(id, 'String', 'id')
-    || this.validate(meta, 'Object', 'metadata')
-  )
-  if (rej) return rej
+    var rej = (
+        this.validate(id, 'String', 'id') ||
+        this.validate(meta, 'Object', 'metadata')
+    )
+    if (rej) return rej
 
-  debug('[replaceVideoMetadata] id=`%s` meta=`%j`', id, meta)
+    debug('[replaceVideoMetadata] id=`%s` meta=`%j`', id, meta)
 
-  return this
-    .put({
-      route: `/v2/assets/${id}/metadata`
-    , options: {
-        body: meta
-      }
-    })
-    .then(function(resp) {
-      debug('[replaceVideoMetadata] done: id=`%s` resp=`%j`', id, resp.body)
+    return this
+        .put({
+            route: `/v2/assets/${id}/metadata`,
+            options: {
+                body: meta
+            }
+        })
+        .then(function(resp) {
+            debug('[replaceVideoMetadata] done: id=`%s` resp=`%j`', id, resp.body)
 
-      return resp.body
-    })
+            return resp.body
+        })
 }
 
 /**
@@ -263,20 +258,20 @@ exports.replaceVideoMetadata = function(id, meta) {
  */
 
 exports.getVideoPlayer = function(id) {
-  var rej = this.validate(id, 'String', 'id')
-  if (rej) return rej
+    var rej = this.validate(id, 'String', 'id')
+    if (rej) return rej
 
-  debug('[getVideoPlayer] id=`%s`', id)
+    debug('[getVideoPlayer] id=`%s`', id)
 
-  return this
-    .get({
-      route: `/v2/assets/${id}/player`
-    })
-    .then(function(resp) {
-      debug('[getVideoPlayer] done: resp=`%j`', resp.body)
+    return this
+        .get({
+            route: `/v2/assets/${id}/player`
+        })
+        .then(function(resp) {
+            debug('[getVideoPlayer] done: resp=`%j`', resp.body)
 
-      return resp.body
-    })
+            return resp.body
+        })
 }
 
 /**
@@ -287,20 +282,20 @@ exports.getVideoPlayer = function(id) {
  */
 
 exports.getVideoSource = function(id) {
-  var rej = this.validate(id, 'String', 'id')
-  if (rej) return rej
+    var rej = this.validate(id, 'String', 'id')
+    if (rej) return rej
 
-  debug('[getVideoSource] id=`%s`', id)
+    debug('[getVideoSource] id=`%s`', id)
 
-  return this
-    .get({
-      route: `/v2/assets/${id}/source_file_info`
-    })
-    .then(function(resp) {
-      debug('[getVideoSource] done: id=`%s` resp=`%j`', id, resp.body)
+    return this
+        .get({
+            route: `/v2/assets/${id}/source_file_info`
+        })
+        .then(function(resp) {
+            debug('[getVideoSource] done: id=`%s` resp=`%j`', id, resp.body)
 
-      return resp.body
-    })
+            return resp.body
+        })
 }
 
 /**
@@ -311,20 +306,20 @@ exports.getVideoSource = function(id) {
  */
 
 exports.getVideoStreams = function(id) {
-  var rej = this.validate(id, 'String', 'id')
-  if (rej) return rej
+    var rej = this.validate(id, 'String', 'id')
+    if (rej) return rej
 
-  debug('[getVideoStreams] id=`%s`', id)
+    debug('[getVideoStreams] id=`%s`', id)
 
-  return this
-    .get({
-      route: `/v2/assets/${id}/streams`
-    })
-    .then(function(resp) {
-      debug('[getVideoStreams] done: id=`%s` resp=`%j`', id, resp.body)
+    return this
+        .get({
+            route: `/v2/assets/${id}/streams`
+        })
+        .then(function(resp) {
+            debug('[getVideoStreams] done: id=`%s` resp=`%j`', id, resp.body)
 
-      return resp.body
-    })
+            return resp.body
+        })
 }
 
 /**
@@ -335,20 +330,20 @@ exports.getVideoStreams = function(id) {
  */
 
 exports.deleteVideo = function(id) {
-  var rej = this.validate(id, 'String', 'id')
-  if (rej) return rej
+    var rej = this.validate(id, 'String', 'id')
+    if (rej) return rej
 
-  debug('[deleteVideo] id=`%s`', id)
+    debug('[deleteVideo] id=`%s`', id)
 
-  return this
-    .delete({
-      route: `/v2/assets/${id}`
-    })
-    .then(function(resp) {
-      debug('[deleteVideo] found=`%s`', resp.body)
+    return this
+        .delete({
+            route: `/v2/assets/${id}`
+        })
+        .then(function(resp) {
+            debug('[deleteVideo] found=`%s`', resp.body)
 
-      return resp.body
-    })
+            return resp.body
+        })
 }
 
 /**
@@ -364,31 +359,31 @@ exports.deleteVideo = function(id) {
  */
 
 exports.getFullVideoDetails = function(id) {
-  var rej = this.validate(id, 'String', 'id')
-  if (rej) return rej
+    var rej = this.validate(id, 'String', 'id')
+    if (rej) return rej
 
-  debug('[getFullVideoDetails] fetching: id=`%s`', id)
+    debug('[getFullVideoDetails] fetching: id=`%s`', id)
 
-  var self = this
-    , resp
+    var self = this,
+        resp
 
-  // Run this in order for easier debugging
-  return this
-    .getVideoDetails(id)
-    .then(function(details) {
-      resp = details
-      return self.getVideoStreams(id)
-    })
-    .then(function(streams) {
-      resp.streams = streams
-      return self.getVideoSource(id)
-    })
-    .then(function(source) {
-      debug('[getFullVideoDetails] done: id=`%s`', id)
+    // Run this in order for easier debugging
+    return this
+        .getVideoDetails(id)
+        .then(function(details) {
+            resp = details
+            return self.getVideoStreams(id)
+        })
+        .then(function(streams) {
+            resp.streams = streams
+            return self.getVideoSource(id)
+        })
+        .then(function(source) {
+            debug('[getFullVideoDetails] done: id=`%s`', id)
 
-      resp.source = source
-      return resp
-    })
+            resp.source = source
+            return resp
+        })
 }
 
 /**
@@ -399,28 +394,28 @@ exports.getFullVideoDetails = function(id) {
  */
 
 exports.createOrUpdateVideoAsset = function(video) {
-  var rej = (
-    this.validate(video, 'Object', 'video')
-    || this.validate(video.file_size, 'Number', 'video.file_size')
-  )
-  if (rej) return rej
+    var rej = (
+        this.validate(video, 'Object', 'video') ||
+        this.validate(video.file_size, 'Number', 'video.file_size')
+    )
+    if (rej) return rej
 
-  var id = video.embed_code
+    var id = video.embed_code
 
-  debug('[createOrUpdateVideoAsset] data=`%j`', video)
+    debug('[createOrUpdateVideoAsset] data=`%j`', video)
 
-  // Determine how to start the workflow, if the `embed_code` is already known,
-  // then we can assume the video was already created in Backlot, if not, then we
-  // want to create the initial asset
-  var start = id
-    ? this.updateVideoData(id, _.omit(video, 'embed_code'))
-    : this.createVideoAsset(video)
+    // Determine how to start the workflow, if the `embed_code` is already known,
+    // then we can assume the video was already created in Backlot, if not, then we
+    // want to create the initial asset
+    var start = id ?
+        this.updateVideoData(id, _.omit(video, 'embed_code')) :
+        this.createVideoAsset(video)
 
-  return start
-    .then(function(results) {
-      debug('[createOrUpdateVideoAsset] done: results=`%j`', results)
-      return results
-    })
+    return start
+        .then(function(results) {
+            debug('[createOrUpdateVideoAsset] done: results=`%j`', results)
+            return results
+        })
 }
 
 /**
@@ -438,44 +433,44 @@ exports.createOrUpdateVideoAsset = function(video) {
  */
 
 exports.syncVideoAsset = function(video) {
-  var rej = (
-    this.validate(video, 'Object', 'video')
-    || this.validate(video.file_size, 'Number', 'video.file_size')
-  )
-  if (rej) return rej
+    var rej = (
+        this.validate(video, 'Object', 'video') ||
+        this.validate(video.file_size, 'Number', 'video.file_size')
+    )
+    if (rej) return rej
 
-  var self = this
-    , id = video.embed_code
-    , remoteVideo
+    var self = this,
+        id = video.embed_code,
+        remoteVideo
 
-  debug('[syncVideoAsset] data=`%j`', video)
+    debug('[syncVideoAsset] data=`%j`', video)
 
-  return this
-    .createOrUpdateVideoAsset(video)
-    .then(function(obj) {
-      remoteVideo = obj
-      id || (id = obj.embed_code)
+    return this
+        .createOrUpdateVideoAsset(video)
+        .then(function(obj) {
+            remoteVideo = obj
+            id || (id = obj.embed_code)
 
-      // Sync remaining content, ensure we have the `embed_code`
-      return self.syncVideoContent(_.extend({
-        embed_code: id
-      }, video))
-    })
+            // Sync remaining content, ensure we have the `embed_code`
+            return self.syncVideoContent(_.extend({
+                embed_code: id
+            }, video))
+        })
 
-    // Always return the created video object
-    .then(function(results) {
-      debug('[syncVideoAsset] completed: results=`%j`', results)
+        // Always return the created video object
+        .then(function(results) {
+            debug('[syncVideoAsset] completed: results=`%j`', results)
 
-      return remoteVideo
-    })
+            return remoteVideo
+        })
 
-    // Add video data to error if available
-    .catch(function(err) {
-      debug('[syncVideoAsset] failed: err=`%s`', err)
+        // Add video data to error if available
+        .catch(function(err) {
+            debug('[syncVideoAsset] failed: err=`%s`', err)
 
-      err.video = remoteVideo
-      return Promise.reject(err)
-    })
+            err.video = remoteVideo
+            return Promise.reject(err)
+        })
 }
 
 /**
@@ -490,40 +485,40 @@ exports.syncVideoAsset = function(video) {
  */
 
 exports.syncVideoContent = function(video) {
-  var rej = (
-    this.validate(video, 'Object', 'video')
-    || this.validate(video.embed_code, 'String', 'video.embed_code')
-  )
-  if (rej) return rej
+    var rej = (
+        this.validate(video, 'Object', 'video') ||
+        this.validate(video.embed_code, 'String', 'video.embed_code')
+    )
+    if (rej) return rej
 
-  var self = this
-    , id = video.embed_code
+    var self = this,
+        id = video.embed_code
 
-  debug('[syncVideoContent] syncing video: id=`%s`', id)
+    debug('[syncVideoContent] syncing video: id=`%s`', id)
 
-  return Promise
-    .resolve()
+    return Promise
+        .resolve()
 
-    // Set video metadata if available
-    .then(function() {
-      if (!video.metadata) {
-        return
-      }
-      return self.setVideoMetadata(id, video.metadata)
-    })
+        // Set video metadata if available
+        .then(function() {
+            if (!video.metadata) {
+                return
+            }
+            return self.setVideoMetadata(id, video.metadata)
+        })
 
-    // Sync up any video labels in backlot before assigning to video, treat any
-    // non-existing labels as new labels to be created then assigned, remove any
-    // labels assigned to the video not in current data
-    .then(function() {
-      if (!video.labels) {
-        return []
-      }
-      return self.syncVideoLabels(id, video.labels)
-    })
+        // Sync up any video labels in backlot before assigning to video, treat any
+        // non-existing labels as new labels to be created then assigned, remove any
+        // labels assigned to the video not in current data
+        .then(function() {
+            if (!video.labels) {
+                return []
+            }
+            return self.syncVideoLabels(id, video.labels)
+        })
 
-    .then(function() {
-      debug('[syncVideoAsset] complete: id=`%s`', id)
-      return video
-    })
+        .then(function() {
+            debug('[syncVideoAsset] complete: id=`%s`', id)
+            return video
+        })
 }
